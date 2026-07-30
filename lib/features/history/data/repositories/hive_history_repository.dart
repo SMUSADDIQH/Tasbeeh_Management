@@ -15,12 +15,36 @@ class HiveHistoryRepository implements HistoryRepository {
   List<String>? _keyCache;
 
   @override
+  int get revision => _historyBox.length;
+
+  @override
   Future<void> append(CounterHistoryEntry entry) {
     final key =
         '${entry.timestamp.microsecondsSinceEpoch}_'
         '${_historyBox.length}_${_keySequence++}';
     _keyCache = null;
     return _historyBox.put(key, entry.toMap());
+  }
+
+  @override
+  Future<List<CounterHistoryEntry>> fetchAll() async {
+    final entries = <CounterHistoryEntry>[];
+    final keys = _sortedKeys().reversed.toList();
+    const batchSize = 64;
+
+    for (var start = 0; start < keys.length; start += batchSize) {
+      final end = (start + batchSize).clamp(0, keys.length);
+      final values = await Future.wait(
+        keys.sublist(start, end).map(_historyBox.get),
+      );
+      for (final value in values) {
+        final entry = CounterHistoryEntry.tryFromMap(value);
+        if (entry != null) {
+          entries.add(entry);
+        }
+      }
+    }
+    return List.unmodifiable(entries);
   }
 
   @override

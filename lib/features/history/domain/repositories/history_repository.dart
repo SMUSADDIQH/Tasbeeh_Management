@@ -14,7 +14,11 @@ class HistoryPage {
 }
 
 abstract interface class HistoryRepository {
+  int get revision;
+
   Future<void> append(CounterHistoryEntry entry);
+
+  Future<List<CounterHistoryEntry>> fetchAll();
 
   Future<HistoryPage> fetchPage({
     required HistoryDateRange range,

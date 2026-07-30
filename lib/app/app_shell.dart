@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/history/presentation/providers/history_provider.dart';
 import '../features/history/presentation/screens/history_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
+import '../features/statistics/presentation/providers/statistics_provider.dart';
+import '../features/statistics/presentation/screens/statistics_screen.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -26,9 +28,14 @@ class _AppShellState extends ConsumerState<AppShell> {
       selectedIcon: Icon(Icons.history_rounded),
       label: 'History',
     ),
+    NavigationDestination(
+      icon: Icon(Icons.insights_outlined),
+      selectedIcon: Icon(Icons.insights_rounded),
+      label: 'Statistics',
+    ),
   ];
 
-  static const _screens = [HomeScreen(), HistoryScreen()];
+  static const _screens = [HomeScreen(), HistoryScreen(), StatisticsScreen()];
 
   void _selectDestination(int index) {
     if (_selectedIndex == index) {
@@ -40,6 +47,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     });
     if (index == 1) {
       ref.read(historyProvider.notifier).refresh();
+    } else if (index == 2) {
+      ref.read(statisticsProvider.notifier).load();
     }
   }
 
