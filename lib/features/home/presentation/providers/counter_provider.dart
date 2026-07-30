@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/counter_repository.dart';
+import '../../domain/models/counter_history_entry.dart';
 import '../../domain/models/tasbeeh_counter_model.dart';
 
 final counterRepositoryProvider = Provider<CounterRepository>((ref) {
@@ -34,7 +35,7 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
     final now = DateTime.now();
     final previous = state;
 
-    state = previous.copyWith(
+    final next = previous.copyWith(
       currentCount: previous.currentCount + 1,
       todayCount: previous.todayCount + 1,
       lifetimeCount: previous.lifetimeCount + 1,
@@ -45,6 +46,7 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       undoLifetimeCount: previous.lifetimeCount,
       undoLastUpdated: previous.lastUpdated,
     );
+    state = _recordHistory(next, CounterHistoryAction.increment, now);
     _persist();
   }
 
@@ -70,7 +72,8 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       return;
     }
 
-    state = state.copyWith(
+    final now = DateTime.now();
+    final next = state.copyWith(
       currentCount: state.undoCurrentCount,
       todayCount: state.undoTodayCount,
       lifetimeCount: state.undoLifetimeCount,
@@ -78,6 +81,7 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       clearLastUpdated: state.undoLastUpdated == null,
       clearUndo: true,
     );
+    state = _recordHistory(next, CounterHistoryAction.undo, now);
     _persist();
   }
 
@@ -87,14 +91,16 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
     }
 
     final previous = state;
-    state = previous.copyWith(
+    final now = DateTime.now();
+    final next = previous.copyWith(
       currentCount: 0,
-      lastUpdated: DateTime.now(),
+      lastUpdated: now,
       undoCurrentCount: previous.currentCount,
       undoTodayCount: previous.todayCount,
       undoLifetimeCount: previous.lifetimeCount,
       undoLastUpdated: previous.lastUpdated,
     );
+    state = _recordHistory(next, CounterHistoryAction.reset, now);
     _persist();
   }
 
@@ -104,7 +110,9 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       return false;
     }
 
-    state = state.copyWith(target: target, lastUpdated: DateTime.now());
+    final now = DateTime.now();
+    final next = state.copyWith(target: target, lastUpdated: now);
+    state = _recordHistory(next, CounterHistoryAction.targetChanged, now);
     _persist();
     return true;
   }
@@ -115,11 +123,12 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       return;
     }
 
-    state = state.copyWith(
+    final next = state.copyWith(
       todayCount: 0,
       countDate: TasbeehCounterModel.dateKey(now),
       clearUndo: true,
     );
+    state = _recordHistory(next, CounterHistoryAction.dailyRollover, now);
     _persist();
   }
 
@@ -135,6 +144,23 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
 
   void _persist() {
     unawaited(_repository.save(state));
+  }
+
+  TasbeehCounterModel _recordHistory(
+    TasbeehCounterModel counter,
+    CounterHistoryAction action,
+    DateTime timestamp,
+  ) {
+    final entry = CounterHistoryEntry(
+      action: action,
+      timestamp: timestamp,
+      currentCount: counter.currentCount,
+      target: counter.target,
+      todayCount: counter.todayCount,
+      lifetimeCount: counter.lifetimeCount,
+    );
+
+    return counter.copyWith(history: [...counter.history, entry]);
   }
 
   @override
