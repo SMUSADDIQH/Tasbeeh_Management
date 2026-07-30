@@ -10,6 +10,9 @@ class ProgressCard extends StatelessWidget {
     required this.tasbeehName,
     required this.currentCount,
     required this.target,
+    required this.remaining,
+    required this.progress,
+    required this.progressPercent,
     required this.lastUpdated,
     super.key,
   });
@@ -17,13 +20,14 @@ class ProgressCard extends StatelessWidget {
   final String tasbeehName;
   final int currentCount;
   final int target;
+  final int remaining;
+  final double progress;
+  final int progressPercent;
   final String lastUpdated;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final safeTarget = target <= 0 ? 1 : target;
-    final remaining = (safeTarget - currentCount).clamp(0, safeTarget);
 
     return AppCard(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -43,17 +47,15 @@ class ProgressCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               ProgressRing(
-                progress: currentCount / safeTarget,
+                progress: progress,
+                progressPercent: progressPercent,
                 currentCount: currentCount,
               ),
               const SizedBox(height: AppSpacing.lg),
               Row(
                 children: [
                   Expanded(
-                    child: _ProgressMetric(
-                      label: 'Target',
-                      value: '$safeTarget',
-                    ),
+                    child: _ProgressMetric(label: 'Target', value: '$target'),
                   ),
                   SizedBox(
                     height: 44,

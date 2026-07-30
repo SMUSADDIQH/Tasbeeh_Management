@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/section_title.dart';
+import '../providers/counter_provider.dart';
+import '../widgets/counter_controls.dart';
+import '../widgets/custom_target_dialog.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/progress_card.dart';
 import '../widgets/stats_grid.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final counter = ref.watch(counterProvider);
+    final notifier = ref.read(counterProvider.notifier);
+    final lastUpdated = _lastUpdatedLabel(context, counter.lastUpdated);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -37,32 +45,59 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      const progressCard = ProgressCard(
-                        tasbeehName: 'SubhanAllah',
-                        currentCount: 68,
-                        target: 100,
-                        lastUpdated: 'today at 9:42 AM',
+                      final progressCard = ProgressCard(
+                        tasbeehName: counter.tasbeehName,
+                        currentCount: counter.currentCount,
+                        target: counter.target,
+                        remaining: counter.remaining,
+                        progress: counter.progress,
+                        progressPercent: counter.progressPercent,
+                        lastUpdated: lastUpdated,
                       );
-                      const statsGrid = StatsGrid(
-                        todayCount: 68,
-                        lifetimeCount: 12486,
+                      final controls = CounterControls(
+                        onIncrement: notifier.increment,
+                        onContinuousCountStart: notifier.startContinuousCount,
+                        onContinuousCountEnd: notifier.stopContinuousCount,
+                        onUndo: notifier.undo,
+                        onReset: notifier.reset,
+                        onSetTarget: () => _showTargetDialog(
+                          context,
+                          counter.target,
+                          notifier.setCustomTarget,
+                        ),
+                        canUndo: counter.canUndo,
+                      );
+                      final statsGrid = StatsGrid(
+                        todayCount: counter.todayCount,
+                        lifetimeCount: counter.lifetimeCount,
                       );
 
                       if (constraints.maxWidth < 760) {
-                        return const Column(
+                        return Column(
                           children: [
                             progressCard,
                             SizedBox(height: AppSpacing.md),
+                            controls,
+                            SizedBox(height: AppSpacing.lg),
                             statsGrid,
                           ],
                         );
                       }
 
-                      return const Row(
+                      return Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(flex: 5, child: progressCard),
-                          SizedBox(width: AppSpacing.lg),
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              children: [
+                                progressCard,
+                                const SizedBox(height: AppSpacing.md),
+                                controls,
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.lg),
                           Expanded(flex: 4, child: statsGrid),
                         ],
                       );
@@ -74,6 +109,43 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  String _lastUpdatedLabel(BuildContext context, DateTime? lastUpdated) {
+    if (lastUpdated == null) {
+      return 'never';
+    }
+
+    final localizations = MaterialLocalizations.of(context);
+    final local = lastUpdated.toLocal();
+    final now = DateTime.now();
+    final time = localizations.formatTimeOfDay(TimeOfDay.fromDateTime(local));
+    final isToday =
+        local.year == now.year &&
+        local.month == now.month &&
+        local.day == now.day;
+
+    if (isToday) {
+      return 'today at $time';
+    }
+
+    return '${localizations.formatCompactDate(local)} at $time';
+  }
+
+  Future<void> _showTargetDialog(
+    BuildContext context,
+    int currentTarget,
+    bool Function(String value) onSubmit,
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) {
+        return CustomTargetDialog(
+          currentTarget: currentTarget,
+          onSubmit: onSubmit,
+        );
+      },
     );
   }
 }

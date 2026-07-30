@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 class ProgressRing extends StatelessWidget {
   const ProgressRing({
     required this.progress,
+    required this.progressPercent,
     required this.currentCount,
     this.size = 190,
     super.key,
   });
 
   final double progress;
+  final int progressPercent;
   final int currentCount;
   final double size;
 
@@ -49,7 +51,7 @@ class ProgressRing extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${(value * 100).round()}%',
+                      '$progressPercent%',
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
