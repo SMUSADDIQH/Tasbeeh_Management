@@ -19,11 +19,16 @@ class HomeScreen extends ConsumerWidget {
     final counter = ref.watch(counterProvider);
     final notifier = ref.read(counterProvider.notifier);
     final lastUpdated = _lastUpdatedLabel(context, counter.lastUpdated);
+    final isLandscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: AppSpacing.pagePadding,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: isLandscape ? AppSpacing.md : AppSpacing.lg,
+          ),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1120),
@@ -55,6 +60,7 @@ class HomeScreen extends ConsumerWidget {
                         lastUpdated: lastUpdated,
                       );
                       final controls = CounterControls(
+                        count: counter.currentCount,
                         onIncrement: notifier.increment,
                         onContinuousCountStart: notifier.startContinuousCount,
                         onContinuousCountEnd: notifier.stopContinuousCount,
@@ -66,6 +72,7 @@ class HomeScreen extends ConsumerWidget {
                           notifier.setCustomTarget,
                         ),
                         canUndo: counter.canUndo,
+                        canReset: counter.currentCount > 0,
                       );
                       final statsGrid = StatsGrid(
                         todayCount: counter.todayCount,
