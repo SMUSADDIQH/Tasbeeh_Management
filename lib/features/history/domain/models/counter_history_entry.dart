@@ -10,7 +10,8 @@ class CounterHistoryEntry {
   const CounterHistoryEntry({
     required this.action,
     required this.timestamp,
-    required this.currentCount,
+    required this.previousCount,
+    required this.newCount,
     required this.target,
     required this.todayCount,
     required this.lifetimeCount,
@@ -18,7 +19,8 @@ class CounterHistoryEntry {
 
   final CounterHistoryAction action;
   final DateTime timestamp;
-  final int currentCount;
+  final int previousCount;
+  final int newCount;
   final int target;
   final int todayCount;
   final int lifetimeCount;
@@ -27,7 +29,8 @@ class CounterHistoryEntry {
     return {
       'action': action.name,
       'timestamp': timestamp.millisecondsSinceEpoch,
-      'currentCount': currentCount,
+      'previousCount': previousCount,
+      'newCount': newCount,
       'target': target,
       'todayCount': todayCount,
       'lifetimeCount': lifetimeCount,
@@ -39,40 +42,52 @@ class CounterHistoryEntry {
       return null;
     }
 
-    final actionName = value['action'];
+    final action = _actionFromName(value['action']);
     final timestamp = value['timestamp'];
-    final currentCount = value['currentCount'];
+    final legacyCount = value['currentCount'];
+    final previousCount = value['previousCount'] ?? legacyCount;
+    final newCount = value['newCount'] ?? legacyCount;
     final target = value['target'];
     final todayCount = value['todayCount'];
     final lifetimeCount = value['lifetimeCount'];
 
-    if (actionName is! String ||
+    if (action == null ||
         timestamp is! int ||
-        currentCount is! int ||
+        previousCount is! int ||
+        newCount is! int ||
         target is! int ||
         todayCount is! int ||
         lifetimeCount is! int ||
-        currentCount < 0 ||
+        previousCount < 0 ||
+        newCount < 0 ||
         target <= 0 ||
         todayCount < 0 ||
         lifetimeCount < 0) {
       return null;
     }
 
-    final action = CounterHistoryAction.values
-        .where((candidate) => candidate.name == actionName)
-        .firstOrNull;
-    if (action == null) {
-      return null;
-    }
-
     return CounterHistoryEntry(
       action: action,
       timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp),
-      currentCount: currentCount,
+      previousCount: previousCount,
+      newCount: newCount,
       target: target,
       todayCount: todayCount,
       lifetimeCount: lifetimeCount,
     );
+  }
+
+  static CounterHistoryAction? _actionFromName(Object? value) {
+    if (value is! String) {
+      return null;
+    }
+
+    for (final action in CounterHistoryAction.values) {
+      if (action.name == value) {
+        return action;
+      }
+    }
+
+    return null;
   }
 }

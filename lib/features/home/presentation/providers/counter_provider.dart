@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../history/domain/models/counter_history_entry.dart';
+import '../../../history/domain/repositories/history_repository.dart';
+import '../../../history/presentation/providers/history_repository_provider.dart';
 import '../../data/repositories/counter_repository.dart';
-import '../../domain/models/counter_history_entry.dart';
 import '../../domain/models/tasbeeh_counter_model.dart';
 
 final counterRepositoryProvider = Provider<CounterRepository>((ref) {
@@ -14,11 +16,14 @@ final counterRepositoryProvider = Provider<CounterRepository>((ref) {
 
 final counterProvider =
     StateNotifierProvider<CounterNotifier, TasbeehCounterModel>((ref) {
-      return CounterNotifier(ref.watch(counterRepositoryProvider));
+      return CounterNotifier(
+        ref.watch(counterRepositoryProvider),
+        ref.watch(historyRepositoryProvider),
+      );
     });
 
 class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
-  CounterNotifier(this._repository)
+  CounterNotifier(this._repository, this._historyRepository)
     : super(_repository.load() ?? TasbeehCounterModel.initial(DateTime.now())) {
     _normalizeToday();
     _scheduleDailyRollover();
@@ -27,6 +32,7 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
   static const _continuousCountInterval = Duration(milliseconds: 140);
 
   final CounterRepository _repository;
+  final HistoryRepository _historyRepository;
   Timer? _continuousCountTimer;
   Timer? _dailyRolloverTimer;
 
@@ -46,7 +52,8 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       undoLifetimeCount: previous.lifetimeCount,
       undoLastUpdated: previous.lastUpdated,
     );
-    state = _recordHistory(next, CounterHistoryAction.increment, now);
+    state = next;
+    _recordHistory(previous, next, CounterHistoryAction.increment, now);
     _persist();
   }
 
@@ -72,16 +79,18 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       return;
     }
 
+    final previous = state;
     final now = DateTime.now();
-    final next = state.copyWith(
-      currentCount: state.undoCurrentCount,
-      todayCount: state.undoTodayCount,
-      lifetimeCount: state.undoLifetimeCount,
-      lastUpdated: state.undoLastUpdated,
-      clearLastUpdated: state.undoLastUpdated == null,
+    final next = previous.copyWith(
+      currentCount: previous.undoCurrentCount,
+      todayCount: previous.undoTodayCount,
+      lifetimeCount: previous.undoLifetimeCount,
+      lastUpdated: previous.undoLastUpdated,
+      clearLastUpdated: previous.undoLastUpdated == null,
       clearUndo: true,
     );
-    state = _recordHistory(next, CounterHistoryAction.undo, now);
+    state = next;
+    _recordHistory(previous, next, CounterHistoryAction.undo, now);
     _persist();
   }
 
@@ -100,7 +109,8 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       undoLifetimeCount: previous.lifetimeCount,
       undoLastUpdated: previous.lastUpdated,
     );
-    state = _recordHistory(next, CounterHistoryAction.reset, now);
+    state = next;
+    _recordHistory(previous, next, CounterHistoryAction.reset, now);
     _persist();
   }
 
@@ -110,9 +120,11 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       return false;
     }
 
+    final previous = state;
     final now = DateTime.now();
-    final next = state.copyWith(target: target, lastUpdated: now);
-    state = _recordHistory(next, CounterHistoryAction.targetChanged, now);
+    final next = previous.copyWith(target: target, lastUpdated: now);
+    state = next;
+    _recordHistory(previous, next, CounterHistoryAction.targetChanged, now);
     _persist();
     return true;
   }
@@ -123,12 +135,14 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
       return;
     }
 
-    final next = state.copyWith(
+    final previous = state;
+    final next = previous.copyWith(
       todayCount: 0,
       countDate: TasbeehCounterModel.dateKey(now),
       clearUndo: true,
     );
-    state = _recordHistory(next, CounterHistoryAction.dailyRollover, now);
+    state = next;
+    _recordHistory(previous, next, CounterHistoryAction.dailyRollover, now);
     _persist();
   }
 
@@ -146,21 +160,22 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
     unawaited(_repository.save(state));
   }
 
-  TasbeehCounterModel _recordHistory(
-    TasbeehCounterModel counter,
+  void _recordHistory(
+    TasbeehCounterModel previous,
+    TasbeehCounterModel next,
     CounterHistoryAction action,
     DateTime timestamp,
   ) {
     final entry = CounterHistoryEntry(
       action: action,
       timestamp: timestamp,
-      currentCount: counter.currentCount,
-      target: counter.target,
-      todayCount: counter.todayCount,
-      lifetimeCount: counter.lifetimeCount,
+      previousCount: previous.currentCount,
+      newCount: next.currentCount,
+      target: next.target,
+      todayCount: next.todayCount,
+      lifetimeCount: next.lifetimeCount,
     );
-
-    return counter.copyWith(history: [...counter.history, entry]);
+    unawaited(_historyRepository.append(entry));
   }
 
   @override

@@ -1,5 +1,3 @@
-import 'counter_history_entry.dart';
-
 class TasbeehCounterModel {
   const TasbeehCounterModel({
     required this.tasbeehName,
@@ -8,7 +6,6 @@ class TasbeehCounterModel {
     required this.todayCount,
     required this.lifetimeCount,
     required this.countDate,
-    required this.history,
     this.lastUpdated,
     this.undoCurrentCount,
     this.undoTodayCount,
@@ -24,7 +21,6 @@ class TasbeehCounterModel {
       todayCount: 0,
       lifetimeCount: 0,
       countDate: _dateKey(now),
-      history: const [],
     );
   }
 
@@ -36,7 +32,6 @@ class TasbeehCounterModel {
       todayCount: _nonNegativeInt(map['todayCount']),
       lifetimeCount: _nonNegativeInt(map['lifetimeCount']),
       countDate: map['countDate'] as String? ?? '',
-      history: _historyFromMap(map['history']),
       lastUpdated: _dateTimeFromMilliseconds(map['lastUpdated']),
       undoCurrentCount: _nullableNonNegativeInt(map['undoCurrentCount']),
       undoTodayCount: _nullableNonNegativeInt(map['undoTodayCount']),
@@ -51,7 +46,6 @@ class TasbeehCounterModel {
   final int todayCount;
   final int lifetimeCount;
   final String countDate;
-  final List<CounterHistoryEntry> history;
   final DateTime? lastUpdated;
   final int? undoCurrentCount;
   final int? undoTodayCount;
@@ -75,7 +69,6 @@ class TasbeehCounterModel {
     int? todayCount,
     int? lifetimeCount,
     String? countDate,
-    List<CounterHistoryEntry>? history,
     DateTime? lastUpdated,
     int? undoCurrentCount,
     int? undoTodayCount,
@@ -91,7 +84,6 @@ class TasbeehCounterModel {
       todayCount: todayCount ?? this.todayCount,
       lifetimeCount: lifetimeCount ?? this.lifetimeCount,
       countDate: countDate ?? this.countDate,
-      history: history ?? this.history,
       lastUpdated: clearLastUpdated ? null : lastUpdated ?? this.lastUpdated,
       undoCurrentCount: clearUndo
           ? null
@@ -114,7 +106,6 @@ class TasbeehCounterModel {
       'todayCount': todayCount,
       'lifetimeCount': lifetimeCount,
       'countDate': countDate,
-      'history': history.map((entry) => entry.toMap()).toList(),
       'lastUpdated': lastUpdated?.millisecondsSinceEpoch,
       'undoCurrentCount': undoCurrentCount,
       'undoTodayCount': undoTodayCount,
@@ -144,17 +135,5 @@ class TasbeehCounterModel {
 
   static int? _nullableNonNegativeInt(Object? value) {
     return value is int && value >= 0 ? value : null;
-  }
-
-  static List<CounterHistoryEntry> _historyFromMap(Object? value) {
-    if (value is! List<dynamic>) {
-      return const [];
-    }
-
-    return List.unmodifiable(
-      value
-          .map(CounterHistoryEntry.tryFromMap)
-          .whereType<CounterHistoryEntry>(),
-    );
   }
 }

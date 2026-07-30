@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/home/presentation/screens/home_screen.dart';
+import 'app_shell.dart';
 import 'theme/app_theme.dart';
 
 class TasbeehTrackerApp extends StatelessWidget {
@@ -14,7 +14,7 @@ class TasbeehTrackerApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+      home: const AppShell(),
     );
   }
 }
