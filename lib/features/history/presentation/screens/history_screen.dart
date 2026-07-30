@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/app_error_state.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../providers/history_provider.dart';
 import '../widgets/history_empty_state.dart';
@@ -76,7 +77,7 @@ class HistoryScreen extends ConsumerWidget {
               else if (state.errorMessage != null && state.items.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: _HistoryErrorState(
+                  child: AppErrorState(
                     message: state.errorMessage!,
                     onRetry: notifier.refresh,
                   ),
@@ -168,27 +169,6 @@ class _DateHeader extends StatelessWidget {
             color: theme.colorScheme.primary,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HistoryErrorState extends StatelessWidget {
-  const _HistoryErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(message),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton(onPressed: onRetry, child: const Text('Try again')),
-        ],
       ),
     );
   }

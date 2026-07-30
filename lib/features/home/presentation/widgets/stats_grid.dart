@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/utils/count_formatter.dart';
 import 'stats_card.dart';
 
 class StatsGrid extends StatelessWidget {
@@ -37,7 +38,7 @@ class StatsGrid extends StatelessWidget {
                     ),
                     StatsCard(
                       label: 'Lifetime Count',
-                      value: _formatCount(lifetimeCount),
+                      value: formatCount(lifetimeCount),
                       icon: Icons.all_inclusive_rounded,
                     ),
                   ]
@@ -47,20 +48,5 @@ class StatsGrid extends StatelessWidget {
         );
       },
     );
-  }
-
-  String _formatCount(int count) {
-    final digits = count.toString();
-    final formatted = StringBuffer();
-
-    for (var index = 0; index < digits.length; index++) {
-      final positionFromEnd = digits.length - index;
-      formatted.write(digits[index]);
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        formatted.write(',');
-      }
-    }
-
-    return formatted.toString();
   }
 }

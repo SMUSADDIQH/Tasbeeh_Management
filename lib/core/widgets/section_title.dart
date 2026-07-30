@@ -25,10 +25,13 @@ class SectionTitle extends StatelessWidget {
           ? CrossAxisAlignment.center
           : CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          textAlign: textAlign,
-          style: theme.textTheme.headlineMedium,
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            textAlign: textAlign,
+            style: theme.textTheme.headlineMedium,
+          ),
         ),
         if (subtitle case final subtitle?) ...[
           const SizedBox(height: AppSpacing.xs),

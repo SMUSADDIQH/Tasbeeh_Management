@@ -1,0 +1,4 @@
+storeFile=../release-keystore.jks
+storePassword=replace-with-secure-store-password
+keyAlias=tasbeeh-tracker
+keyPassword=replace-with-secure-key-password

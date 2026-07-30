@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/utils/count_formatter.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_error_state.dart';
 import '../../../../core/widgets/section_title.dart';
 import '../../domain/models/statistics_models.dart';
 import '../providers/statistics_provider.dart';
@@ -53,7 +55,7 @@ class StatisticsScreen extends ConsumerWidget {
                           )
                         else if (state.errorMessage != null &&
                             state.data == null)
-                          _StatisticsError(
+                          AppErrorState(
                             message: state.errorMessage!,
                             onRetry: notifier.refresh,
                           )
@@ -115,20 +117,20 @@ class _MetricsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      ('Total Count', _formatNumber(metrics.totalCount), Icons.tag_rounded),
+      ('Total Count', formatCount(metrics.totalCount), Icons.tag_rounded),
       (
         'Daily Average',
-        _formatNumber(metrics.averageDailyCount.round()),
+        formatCount(metrics.averageDailyCount.round()),
         Icons.analytics_outlined,
       ),
       (
         'Highest Day',
-        _formatNumber(metrics.highestDailyCount),
+        formatCount(metrics.highestDailyCount),
         Icons.trending_up_rounded,
       ),
       (
         'Lowest Day',
-        _formatNumber(metrics.lowestDailyCount),
+        formatCount(metrics.lowestDailyCount),
         Icons.trending_down_rounded,
       ),
       ('Current Streak', '${metrics.currentStreak} days', Icons.bolt_rounded),
@@ -248,41 +250,4 @@ class _InsightCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _StatisticsError extends StatelessWidget {
-  const _StatisticsError({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 360,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message),
-            const SizedBox(height: AppSpacing.md),
-            FilledButton(onPressed: onRetry, child: const Text('Try again')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-String _formatNumber(int value) {
-  final digits = value.toString();
-  final formatted = StringBuffer();
-  for (var index = 0; index < digits.length; index++) {
-    final positionFromEnd = digits.length - index;
-    formatted.write(digits[index]);
-    if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-      formatted.write(',');
-    }
-  }
-  return formatted.toString();
 }
