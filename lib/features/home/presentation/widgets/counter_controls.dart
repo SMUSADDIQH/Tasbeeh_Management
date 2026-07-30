@@ -8,6 +8,8 @@ import '../../../../app/theme/app_spacing.dart';
 class CounterControls extends StatelessWidget {
   const CounterControls({
     required this.count,
+    required this.hapticsEnabled,
+    required this.animationsEnabled,
     required this.onIncrement,
     required this.onContinuousCountStart,
     required this.onContinuousCountEnd,
@@ -20,6 +22,8 @@ class CounterControls extends StatelessWidget {
   });
 
   final int count;
+  final bool hapticsEnabled;
+  final bool animationsEnabled;
   final VoidCallback onIncrement;
   final VoidCallback onContinuousCountStart;
   final VoidCallback onContinuousCountEnd;
@@ -38,6 +42,8 @@ class CounterControls extends StatelessWidget {
       children: [
         _PremiumCountButton(
           count: count,
+          hapticsEnabled: hapticsEnabled,
+          animationsEnabled: animationsEnabled,
           height: isLandscape ? 104 : 136,
           onTap: onIncrement,
           onLongPressStart: onContinuousCountStart,
@@ -59,6 +65,8 @@ class CounterControls extends StatelessWidget {
 class _PremiumCountButton extends StatefulWidget {
   const _PremiumCountButton({
     required this.count,
+    required this.hapticsEnabled,
+    required this.animationsEnabled,
     required this.height,
     required this.onTap,
     required this.onLongPressStart,
@@ -66,6 +74,8 @@ class _PremiumCountButton extends StatefulWidget {
   });
 
   final int count;
+  final bool hapticsEnabled;
+  final bool animationsEnabled;
   final double height;
   final VoidCallback onTap;
   final VoidCallback onLongPressStart;
@@ -98,8 +108,12 @@ class _PremiumCountButtonState extends State<_PremiumCountButton>
   void didUpdateWidget(covariant _PremiumCountButton oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.count > oldWidget.count) {
-      _pulseController.forward(from: 0);
-      HapticFeedback.selectionClick();
+      if (widget.animationsEnabled) {
+        _pulseController.forward(from: 0);
+      }
+      if (widget.hapticsEnabled) {
+        HapticFeedback.selectionClick();
+      }
     }
   }
 
@@ -114,11 +128,15 @@ class _PremiumCountButtonState extends State<_PremiumCountButton>
     setState(() {
       _rippleOrigin = details.localPosition;
     });
-    _rippleController.forward(from: 0);
+    if (widget.animationsEnabled) {
+      _rippleController.forward(from: 0);
+    }
   }
 
   void _startContinuousCount() {
-    HapticFeedback.mediumImpact();
+    if (widget.hapticsEnabled) {
+      HapticFeedback.mediumImpact();
+    }
     widget.onLongPressStart();
   }
 

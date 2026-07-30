@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../features/history/presentation/providers/history_provider.dart';
 import '../features/history/presentation/screens/history_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
+import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/statistics/presentation/providers/statistics_provider.dart';
 import '../features/statistics/presentation/screens/statistics_screen.dart';
 
@@ -33,9 +34,19 @@ class _AppShellState extends ConsumerState<AppShell> {
       selectedIcon: Icon(Icons.insights_rounded),
       label: 'Statistics',
     ),
+    NavigationDestination(
+      icon: Icon(Icons.settings_outlined),
+      selectedIcon: Icon(Icons.settings_rounded),
+      label: 'Settings',
+    ),
   ];
 
-  static const _screens = [HomeScreen(), HistoryScreen(), StatisticsScreen()];
+  static const _screens = [
+    HomeScreen(),
+    HistoryScreen(),
+    StatisticsScreen(),
+    SettingsScreen(),
+  ];
 
   void _selectDestination(int index) {
     if (_selectedIndex == index) {

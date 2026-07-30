@@ -13,6 +13,7 @@ class ProgressCard extends StatelessWidget {
     required this.remaining,
     required this.progress,
     required this.progressPercent,
+    required this.animationsEnabled,
     required this.lastUpdated,
     super.key,
   });
@@ -23,6 +24,7 @@ class ProgressCard extends StatelessWidget {
   final int remaining;
   final double progress;
   final int progressPercent;
+  final bool animationsEnabled;
   final String lastUpdated;
 
   @override
@@ -50,6 +52,7 @@ class ProgressCard extends StatelessWidget {
                 progress: progress,
                 progressPercent: progressPercent,
                 currentCount: currentCount,
+                animationsEnabled: animationsEnabled,
               ),
               const SizedBox(height: AppSpacing.lg),
               Row(

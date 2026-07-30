@@ -5,6 +5,7 @@ class ProgressRing extends StatelessWidget {
     required this.progress,
     required this.progressPercent,
     required this.currentCount,
+    required this.animationsEnabled,
     this.size = 190,
     super.key,
   });
@@ -12,6 +13,7 @@ class ProgressRing extends StatelessWidget {
   final double progress;
   final int progressPercent;
   final int currentCount;
+  final bool animationsEnabled;
   final double size;
 
   @override
@@ -23,7 +25,9 @@ class ProgressRing extends StatelessWidget {
       label: 'Tasbeeh progress',
       value: '${(normalizedProgress * 100).round()} percent',
       child: TweenAnimationBuilder<double>(
-        duration: const Duration(milliseconds: 1200),
+        duration: animationsEnabled
+            ? const Duration(milliseconds: 1200)
+            : Duration.zero,
         curve: Curves.easeOutCubic,
         tween: Tween(end: normalizedProgress),
         builder: (context, value, _) {
@@ -45,7 +49,9 @@ class ProgressRing extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
+                      duration: animationsEnabled
+                          ? const Duration(milliseconds: 220)
+                          : Duration.zero,
                       transitionBuilder: (child, animation) {
                         return FadeTransition(
                           opacity: animation,
@@ -69,7 +75,9 @@ class ProgressRing extends StatelessWidget {
                       ),
                     ),
                     AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
+                      duration: animationsEnabled
+                          ? const Duration(milliseconds: 180)
+                          : Duration.zero,
                       child: Text(
                         '$progressPercent%',
                         key: ValueKey(progressPercent),

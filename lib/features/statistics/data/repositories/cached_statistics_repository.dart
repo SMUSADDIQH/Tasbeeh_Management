@@ -1,3 +1,5 @@
+import 'package:hive/hive.dart';
+
 import '../../../history/domain/models/counter_history_entry.dart';
 import '../../../history/domain/repositories/history_repository.dart';
 import '../../../home/data/repositories/counter_repository.dart';
@@ -5,13 +7,26 @@ import '../../domain/models/statistics_models.dart';
 import '../../domain/repositories/statistics_repository.dart';
 
 class CachedStatisticsRepository implements StatisticsRepository {
-  CachedStatisticsRepository(this._historyRepository, this._counterRepository);
+  CachedStatisticsRepository(
+    this._historyRepository,
+    this._counterRepository,
+    this._metadataBox,
+  );
+
+  static const _resetAtKey = 'resetAt';
 
   final HistoryRepository _historyRepository;
   final CounterRepository _counterRepository;
+  final Box<dynamic> _metadataBox;
 
   StatisticsData? _cachedData;
   int _cachedRevision = -1;
+
+  @override
+  DateTime? get resetAt {
+    final value = _metadataBox.get(_resetAtKey);
+    return value is int ? DateTime.fromMillisecondsSinceEpoch(value) : null;
+  }
 
   @override
   Future<StatisticsData> load({bool forceRefresh = false}) async {
@@ -20,12 +35,29 @@ class CachedStatisticsRepository implements StatisticsRepository {
       return _cachedData!;
     }
 
-    final entries = await _historyRepository.fetchAll();
+    final resetBoundary = resetAt;
+    final entries = (await _historyRepository.fetchAll())
+        .where(
+          (entry) =>
+              resetBoundary == null || !entry.timestamp.isBefore(resetBoundary),
+        )
+        .toList();
     final counter = _counterRepository.load();
     final data = _calculate(entries, counter?.lifetimeCount ?? 0);
     _cachedData = data;
     _cachedRevision = revision;
     return data;
+  }
+
+  @override
+  Future<void> setResetAt(DateTime? resetAt) async {
+    if (resetAt == null) {
+      await _metadataBox.delete(_resetAtKey);
+    } else {
+      await _metadataBox.put(_resetAtKey, resetAt.millisecondsSinceEpoch);
+    }
+    _cachedData = null;
+    _cachedRevision = -1;
   }
 
   StatisticsData _calculate(

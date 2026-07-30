@@ -13,17 +13,27 @@ class HiveHistoryRepository implements HistoryRepository {
   final Box<dynamic> _counterBox;
   int _keySequence = 0;
   List<String>? _keyCache;
+  late int _revision = _historyBox.length;
 
   @override
-  int get revision => _historyBox.length;
+  int get revision => _revision;
 
   @override
-  Future<void> append(CounterHistoryEntry entry) {
+  Future<void> append(CounterHistoryEntry entry) async {
     final key =
         '${entry.timestamp.microsecondsSinceEpoch}_'
         '${_historyBox.length}_${_keySequence++}';
     _keyCache = null;
-    return _historyBox.put(key, entry.toMap());
+    await _historyBox.put(key, entry.toMap());
+    _revision++;
+  }
+
+  @override
+  Future<void> clear() async {
+    await _historyBox.clear();
+    _keyCache = null;
+    _keySequence = 0;
+    _revision++;
   }
 
   @override
@@ -45,6 +55,14 @@ class HiveHistoryRepository implements HistoryRepository {
       }
     }
     return List.unmodifiable(entries);
+  }
+
+  @override
+  Future<void> replaceAll(List<CounterHistoryEntry> entries) async {
+    await clear();
+    for (final entry in entries) {
+      await append(entry);
+    }
   }
 
   @override

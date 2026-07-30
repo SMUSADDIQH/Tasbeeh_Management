@@ -18,7 +18,11 @@ abstract interface class HistoryRepository {
 
   Future<void> append(CounterHistoryEntry entry);
 
+  Future<void> clear();
+
   Future<List<CounterHistoryEntry>> fetchAll();
+
+  Future<void> replaceAll(List<CounterHistoryEntry> entries);
 
   Future<HistoryPage> fetchPage({
     required HistoryDateRange range,

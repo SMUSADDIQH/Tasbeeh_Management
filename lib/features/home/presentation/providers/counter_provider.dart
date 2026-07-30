@@ -29,10 +29,9 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
     _scheduleDailyRollover();
   }
 
-  static const _continuousCountInterval = Duration(milliseconds: 140);
-
   final CounterRepository _repository;
   final HistoryRepository _historyRepository;
+  Duration _continuousCountInterval = const Duration(milliseconds: 140);
   Timer? _continuousCountTimer;
   Timer? _dailyRolloverTimer;
 
@@ -72,6 +71,19 @@ class CounterNotifier extends StateNotifier<TasbeehCounterModel> {
   void stopContinuousCount() {
     _continuousCountTimer?.cancel();
     _continuousCountTimer = null;
+  }
+
+  void setContinuousCountInterval(Duration interval) {
+    _continuousCountInterval = interval;
+    if (_continuousCountTimer?.isActive ?? false) {
+      stopContinuousCount();
+      startContinuousCount();
+    }
+  }
+
+  void restore(TasbeehCounterModel counter) {
+    stopContinuousCount();
+    state = counter;
   }
 
   void undo() {

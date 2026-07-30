@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/section_title.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 import '../providers/counter_provider.dart';
 import '../widgets/counter_controls.dart';
 import '../widgets/custom_target_dialog.dart';
@@ -19,6 +20,14 @@ class HomeScreen extends ConsumerWidget {
     final counter = ref.watch(counterProvider);
     final notifier = ref.read(counterProvider.notifier);
     final lastUpdated = _lastUpdatedLabel(context, counter.lastUpdated);
+    final hapticsEnabled = ref.watch(
+      settingsProvider.select((state) => state.settings.hapticFeedbackEnabled),
+    );
+    final animationsEnabled = ref.watch(
+      settingsProvider.select(
+        (state) => state.settings.counterAnimationEnabled,
+      ),
+    );
     final isLandscape =
         MediaQuery.orientationOf(context) == Orientation.landscape;
 
@@ -57,10 +66,13 @@ class HomeScreen extends ConsumerWidget {
                         remaining: counter.remaining,
                         progress: counter.progress,
                         progressPercent: counter.progressPercent,
+                        animationsEnabled: animationsEnabled,
                         lastUpdated: lastUpdated,
                       );
                       final controls = CounterControls(
                         count: counter.currentCount,
+                        hapticsEnabled: hapticsEnabled,
+                        animationsEnabled: animationsEnabled,
                         onIncrement: notifier.increment,
                         onContinuousCountStart: notifier.startContinuousCount,
                         onContinuousCountEnd: notifier.stopContinuousCount,
