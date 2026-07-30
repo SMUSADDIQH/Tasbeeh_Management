@@ -9,4 +9,8 @@ abstract final class AppRadius {
 
   static const BorderRadius card = BorderRadius.all(Radius.circular(lg));
   static const BorderRadius button = BorderRadius.all(Radius.circular(md));
+  static const BorderRadius input = BorderRadius.all(Radius.circular(md));
+  static const BorderRadius pillBorder = BorderRadius.all(
+    Radius.circular(pill),
+  );
 }

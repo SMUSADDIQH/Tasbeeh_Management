@@ -1,93 +1,68 @@
 enum AppThemePreference { system, light, dark }
 
-enum ContinuousCountSpeed { slow, normal, fast }
-
-extension ContinuousCountSpeedDuration on ContinuousCountSpeed {
-  Duration get interval => switch (this) {
-    ContinuousCountSpeed.slow => const Duration(milliseconds: 240),
-    ContinuousCountSpeed.normal => const Duration(milliseconds: 140),
-    ContinuousCountSpeed.fast => const Duration(milliseconds: 80),
-  };
-}
-
 class AppSettings {
   const AppSettings({
     required this.theme,
     required this.defaultTarget,
     required this.hapticFeedbackEnabled,
-    required this.counterAnimationEnabled,
-    required this.continuousCountSpeed,
+    required this.animationsEnabled,
+    required this.remindersEnabled,
+    required this.defaultSessionLabel,
   });
 
-  factory AppSettings.defaults() {
-    return const AppSettings(
-      theme: AppThemePreference.system,
-      defaultTarget: 100,
-      hapticFeedbackEnabled: true,
-      counterAnimationEnabled: true,
-      continuousCountSpeed: ContinuousCountSpeed.normal,
-    );
-  }
+  factory AppSettings.defaults() => const AppSettings(
+    theme: AppThemePreference.system,
+    defaultTarget: 1000,
+    hapticFeedbackEnabled: true,
+    animationsEnabled: true,
+    remindersEnabled: false,
+    defaultSessionLabel: 'After Fajr',
+  );
 
-  factory AppSettings.fromMap(Map<dynamic, dynamic> map) {
-    return AppSettings(
-      theme: _themeFromName(map['theme']),
-      defaultTarget: _positiveInt(map['defaultTarget'], fallback: 100),
-      hapticFeedbackEnabled: map['hapticFeedbackEnabled'] as bool? ?? true,
-      counterAnimationEnabled: map['counterAnimationEnabled'] as bool? ?? true,
-      continuousCountSpeed: _speedFromName(map['continuousCountSpeed']),
-    );
-  }
+  factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
+    theme:
+        AppThemePreference.values
+            .where((item) => item.name == map['theme'])
+            .firstOrNull ??
+        AppThemePreference.system,
+    defaultTarget: map['defaultTarget'] is int && map['defaultTarget'] > 0
+        ? map['defaultTarget'] as int
+        : 1000,
+    hapticFeedbackEnabled: map['hapticFeedbackEnabled'] as bool? ?? true,
+    animationsEnabled: map['animationsEnabled'] as bool? ?? true,
+    remindersEnabled: map['remindersEnabled'] as bool? ?? false,
+    defaultSessionLabel: map['defaultSessionLabel'] as String? ?? 'After Fajr',
+  );
 
   final AppThemePreference theme;
   final int defaultTarget;
   final bool hapticFeedbackEnabled;
-  final bool counterAnimationEnabled;
-  final ContinuousCountSpeed continuousCountSpeed;
+  final bool animationsEnabled;
+  final bool remindersEnabled;
+  final String defaultSessionLabel;
 
   AppSettings copyWith({
     AppThemePreference? theme,
     int? defaultTarget,
     bool? hapticFeedbackEnabled,
-    bool? counterAnimationEnabled,
-    ContinuousCountSpeed? continuousCountSpeed,
-  }) {
-    return AppSettings(
-      theme: theme ?? this.theme,
-      defaultTarget: defaultTarget ?? this.defaultTarget,
-      hapticFeedbackEnabled:
-          hapticFeedbackEnabled ?? this.hapticFeedbackEnabled,
-      counterAnimationEnabled:
-          counterAnimationEnabled ?? this.counterAnimationEnabled,
-      continuousCountSpeed: continuousCountSpeed ?? this.continuousCountSpeed,
-    );
-  }
+    bool? animationsEnabled,
+    bool? remindersEnabled,
+    String? defaultSessionLabel,
+  }) => AppSettings(
+    theme: theme ?? this.theme,
+    defaultTarget: defaultTarget ?? this.defaultTarget,
+    hapticFeedbackEnabled: hapticFeedbackEnabled ?? this.hapticFeedbackEnabled,
+    animationsEnabled: animationsEnabled ?? this.animationsEnabled,
+    remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+    defaultSessionLabel: defaultSessionLabel ?? this.defaultSessionLabel,
+  );
 
-  Map<String, Object> toMap() {
-    return {
-      'theme': theme.name,
-      'defaultTarget': defaultTarget,
-      'hapticFeedbackEnabled': hapticFeedbackEnabled,
-      'counterAnimationEnabled': counterAnimationEnabled,
-      'continuousCountSpeed': continuousCountSpeed.name,
-    };
-  }
-
-  static AppThemePreference _themeFromName(Object? value) {
-    return AppThemePreference.values.firstWhere(
-      (theme) => theme.name == value,
-      orElse: () => AppThemePreference.system,
-    );
-  }
-
-  static ContinuousCountSpeed _speedFromName(Object? value) {
-    return ContinuousCountSpeed.values.firstWhere(
-      (speed) => speed.name == value,
-      orElse: () => ContinuousCountSpeed.normal,
-    );
-  }
-
-  static int _positiveInt(Object? value, {required int fallback}) {
-    return value is int && value > 0 ? value : fallback;
-  }
+  Map<String, Object> toMap() => {
+    'theme': theme.name,
+    'defaultTarget': defaultTarget,
+    'hapticFeedbackEnabled': hapticFeedbackEnabled,
+    'animationsEnabled': animationsEnabled,
+    'remindersEnabled': remindersEnabled,
+    'defaultSessionLabel': defaultSessionLabel,
+  };
 }

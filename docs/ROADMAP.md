@@ -1,21 +1,19 @@
 # Roadmap
 
-## v1.0 — Complete
+## Version 2.0
 
-- Counter engine and premium interaction
-- Persistent history and backup/restore
-- Statistics, charts, streaks, and insights
-- Theme and counter preferences
-- Responsive Material 3 UI and accessibility baseline
-- Android release packaging and automated tests
+- Multiple Zikr goals and session-based completion
+- Offline persistence and integrity repair
+- Searchable, filtered, paginated History
+- Reflection metrics, streaks, and restrained charts
+- Validated JSON backup and restore
+- Responsive and accessible Material 3 interface
 
-## Post-v1.0 candidates
+## Future
 
-- Multiple named counters
-- Optional encrypted backups
-- Localization and right-to-left support
-- Home-screen widgets and wearable companion
-- Golden screenshot tests
-- Store automation and CI-managed production signing
-
-Future scope will be prioritized from user feedback and privacy review.
+- Fully localized interface and locale-aware calendars
+- Optional, user-configured local reminders
+- Hijri date after selecting and validating an offline calendar strategy
+- Encrypted backup option
+- Additional consistency calendar visualization
+- Automated screenshot regression coverage across device classes

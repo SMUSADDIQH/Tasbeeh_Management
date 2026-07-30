@@ -1,58 +1,43 @@
-# Architecture
+# Version 2 Architecture
 
-## Principles
+## Boundaries
 
-- Feature-First ownership
-- Business rules outside widgets
-- Domain contracts independent of Hive and Flutter presentation types
-- Offline-first restoration before `runApp`
-- Shared visual primitives from the Design System
+`features/zikr/domain` contains validated immutable entities and repository
+contracts. `features/zikr/data` implements Hive and JSON backup behavior.
+`features/zikr/presentation` contains Riverpod orchestration and responsive UI.
+Settings retains the same separation for preferences.
 
-## Feature layers
+Widgets invoke notifier commands. They do not calculate stored totals, mutate
+sessions, perform integrity repair, or parse backups.
 
-```text
-feature/
-├── domain/          # Models and repository contracts
-├── data/            # Hive implementations and services
-└── presentation/    # Riverpod state, screens, and widgets
-```
+## Domain
 
-The application flow is:
+- `Zikr`: goal metadata, cached completed total, status, identity, dates, notes
+- `ZikrSession`: amount, timestamp, optional label/note, running total
+- `ZikrCategory`: Quran, Durood, Istighfar, Tasbeeh, Wazifa, Daily, Custom
+- `ZikrStatus`: active, completed, archived
+- `AppSettings`: theme and experience preferences
 
-```text
-User intent → Riverpod notifier → domain transition → repository → selective UI
-```
+## Consistency
 
-Counter events use a dedicated Hive `LazyBox`. History uses chronological keys,
-cursor pages, and lazy slivers. Statistics reads history in bounded batches,
-calculates all periods once per history revision, and caches the result.
-Settings sections use Riverpod `select` so unrelated preferences do not rebuild
-the entire screen.
+Sessions are the source of truth. `Zikr.completed` is a read-optimized cache.
+Session create, edit, delete, import, and startup integrity checks recompute the
+cache and every chronological `runningTotalAfter`. Status is derived from the
+repaired total unless the Zikr is archived.
 
-## Storage
+## State and performance
 
-| Box | Purpose |
-|---|---|
-| `tasbeeh_counter` | Count, target, totals, and undo state |
-| `tasbeeh_history` | Chronological counter events |
-| `tasbeeh_statistics` | Statistics reset boundary |
-| `tasbeeh_settings` | Theme and counter preferences |
+- Riverpod exposes repositories through startup overrides.
+- The main notifier owns immutable view state and injects a deterministic clock.
+- History reads a 40-record page from a Hive `LazyBox` and loads more near the
+  scroll boundary.
+- Reflection results are cached by data revision, period, and selected Zikr.
+- Selective provider watching limits broad screen rebuilds.
+- `IndexedStack` preserves destination state.
 
-Backups use a versioned JSON envelope and validate every record before replacing
-stored data.
+## Navigation and accessibility
 
-## Accessibility
-
-- Screen and section titles expose header semantics.
-- Counter, history events, metrics, insights, and charts expose labels/values.
-- Material controls retain keyboard focus, screen-reader actions, and touch
-  targets.
-- Focus order follows source and visual order.
-- Feature colors come from Material color schemes for consistent contrast.
-
-## Tests
-
-- Unit: models, derived values, filters, and utilities
-- Provider: counter and history state transitions
-- Repository: real temporary Hive boxes, paging, replacement, and caching
-- Widget: semantic headers and event announcements
+Phones use Material 3 `NavigationBar`; widths of 840 logical pixels and above use
+`NavigationRail`. Session rows, charts, progress controls, headers, and actions
+provide semantic labels or hints. Arabic content uses explicit RTL direction
+without reversing surrounding application layout.

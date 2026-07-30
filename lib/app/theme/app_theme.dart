@@ -62,7 +62,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(48, 48),
           padding: AppSpacing.buttonPadding,
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
           textStyle: textTheme.labelLarge,
@@ -70,7 +70,7 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(48, 48),
           padding: AppSpacing.buttonPadding,
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.button),
           side: BorderSide(color: colorScheme.outline),
@@ -80,6 +80,24 @@ class AppTheme {
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant,
         space: AppSpacing.md,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        border: const OutlineInputBorder(borderRadius: AppRadius.input),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.input,
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
+        height: 72,
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
       ),
       visualDensity: VisualDensity.standard,
     );

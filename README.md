@@ -1,44 +1,35 @@
-# Tasbeeh Tracker
+# Zikr Management — Version 2
 
-Tasbeeh Tracker is an offline-first Flutter application for mindful dhikr. It
-combines a responsive counter, persistent history, statistics, backup tools,
-and accessibility-focused Material 3 presentation.
+A premium, offline-first Flutter application for creating multiple Zikr goals,
+recording completed quantities as sessions, reviewing history, and reflecting on
+steady spiritual progress.
 
-## Version
+## Product vision
 
-Release `1.0.0+1` uses Android version name `1.0.0` and version code `1`.
+The application treats a completed quantity as one intentional session. Users
+create Zikr such as Ayat-e-Kareema, Durood Shareef, or Astaghfirullah, assign a
+target, and record meaningful sessions with a date, label, and optional note.
+There is no per-recitation tapping behavior.
 
-## Features
+## Experience
 
-- Tap and continuous-press counting with undo, reset, custom targets, haptics,
-  and optional animations.
-- Hive-backed counter state, preferences, event history, and backup metadata.
-- Searchable, date-filtered history with lazy reads and cursor pagination.
-- Cached statistics, streaks, completion metrics, charts, and insights.
-- System/light/dark themes and configurable counter behavior.
-- JSON export/import and granular data reset controls.
-- Responsive bottom navigation and Navigation Rail layouts.
-- Semantic headers, chart descriptions, event announcements, and tooltips.
+- Five responsive destinations: Home, Zikr, History, Reflection, Settings
+- Material 3 light, dark, and system themes
+- Deep emerald, warm ivory, sage, and muted-gold visual language
+- Session-based progress, streaks, weekly consistency, and projections
+- Offline Hive persistence with validated Version 2 JSON backup and restore
+- NavigationBar for phones and NavigationRail for wide layouts
+- Screen-reader semantics, RTL Arabic greeting, large-text support, and
+  accessible chart summaries
 
 ## Architecture
 
-```text
-lib/
-├── app/                 # App shell and design system
-├── core/                # Shared utilities and widgets
-└── features/
-    ├── home/            # Counter
-    ├── history/         # Timeline and lazy Hive repository
-    ├── statistics/      # Cached aggregation and charts
-    └── settings/        # Preferences, backup, and support
-```
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for layer and data-flow
-details.
+Feature-first source lives under `lib/features`. Riverpod owns application state,
+repositories own Hive operations, and widgets contain presentation concerns only.
+See [Architecture](docs/ARCHITECTURE.md) and
+[Backup schema](docs/BACKUP_SCHEMA.md).
 
 ## Development
-
-Requirements: Flutter stable, Dart `>=3.12.2 <4.0.0`, Android SDK, and Java 17.
 
 ```bash
 flutter pub get
@@ -47,24 +38,13 @@ flutter analyze
 flutter test
 ```
 
-## Android release builds
+## Release
 
 ```bash
 flutter build apk --release
-flutter build appbundle
+flutter build appbundle --release
 ```
 
-Store uploads require an upload key. Follow
-[android/README_SIGNING.md](android/README_SIGNING.md). Never commit
-`android/key.properties` or a keystore.
-
-## Privacy
-
-Application data is stored locally in Hive. Nothing is uploaded by the app.
-Exported JSON leaves the device only through a user-initiated system share.
-
-## Release documents
-
-- [CHANGELOG.md](CHANGELOG.md)
-- [docs/ROADMAP.md](docs/ROADMAP.md)
-- [docs/RELEASE.md](docs/RELEASE.md)
+Android signing configuration is documented in
+[android/README_SIGNING.md](android/README_SIGNING.md). The complete release
+checklist is in [docs/RELEASE.md](docs/RELEASE.md).

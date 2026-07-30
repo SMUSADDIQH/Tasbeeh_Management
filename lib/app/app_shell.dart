@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../features/history/presentation/providers/history_provider.dart';
-import '../features/history/presentation/screens/history_screen.dart';
-import '../features/home/presentation/screens/home_screen.dart';
+import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
-import '../features/statistics/presentation/providers/statistics_provider.dart';
-import '../features/statistics/presentation/screens/statistics_screen.dart';
+import '../features/zikr/presentation/screens/history_screen.dart';
+import '../features/zikr/presentation/screens/home_screen.dart';
+import '../features/zikr/presentation/screens/reflection_screen.dart';
+import '../features/zikr/presentation/screens/zikr_screen.dart';
+import '../features/zikr/presentation/widgets/zikr_widgets.dart';
+import '../features/zikr/presentation/zikr_provider.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
-
   @override
   ConsumerState<AppShell> createState() => _AppShellState();
 }
@@ -20,9 +21,14 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   static const _destinations = [
     NavigationDestination(
-      icon: Icon(Icons.space_dashboard_outlined),
-      selectedIcon: Icon(Icons.space_dashboard_rounded),
-      label: 'Dashboard',
+      icon: Icon(Icons.home_outlined),
+      selectedIcon: Icon(Icons.home_rounded),
+      label: 'Home',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.spa_outlined),
+      selectedIcon: Icon(Icons.spa_rounded),
+      label: 'Zikr',
     ),
     NavigationDestination(
       icon: Icon(Icons.history_outlined),
@@ -30,9 +36,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       label: 'History',
     ),
     NavigationDestination(
-      icon: Icon(Icons.insights_outlined),
-      selectedIcon: Icon(Icons.insights_rounded),
-      label: 'Statistics',
+      icon: Icon(Icons.auto_awesome_outlined),
+      selectedIcon: Icon(Icons.auto_awesome_rounded),
+      label: 'Reflection',
     ),
     NavigationDestination(
       icon: Icon(Icons.settings_outlined),
@@ -41,51 +47,54 @@ class _AppShellState extends ConsumerState<AppShell> {
     ),
   ];
 
-  static const _screens = [
-    HomeScreen(),
-    HistoryScreen(),
-    StatisticsScreen(),
-    SettingsScreen(),
-  ];
-
-  void _selectDestination(int index) {
-    if (_selectedIndex == index) {
-      return;
-    }
-
-    setState(() {
-      _selectedIndex = index;
-    });
-    if (index == 1) {
-      ref.read(historyProvider.notifier).refresh();
-    } else if (index == 2) {
-      ref.read(statisticsProvider.notifier).load();
+  Future<void> _newZikr() async {
+    final draft = await showZikrForm(
+      context,
+      defaultTarget: ref.read(settingsProvider).settings.defaultTarget,
+    );
+    if (draft != null) {
+      await ref.read(zikrProvider.notifier).create(draft);
+      if (mounted) setState(() => _selectedIndex = 1);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      HomeScreen(
+        onNewZikr: _newZikr,
+        onViewHistory: () => setState(() => _selectedIndex = 2),
+      ),
+      const ZikrScreen(),
+      const HistoryScreen(),
+      const ReflectionScreen(),
+      const SettingsScreen(),
+    ];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final content = IndexedStack(index: _selectedIndex, children: _screens);
-
+        final content = IndexedStack(index: _selectedIndex, children: screens);
         if (constraints.maxWidth >= 840) {
           return Scaffold(
             body: Row(
               children: [
-                NavigationRail(
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: _selectDestination,
-                  labelType: NavigationRailLabelType.all,
-                  destinations: _destinations
-                      .map(
-                        (destination) => NavigationRailDestination(
+                SafeArea(
+                  child: NavigationRail(
+                    selectedIndex: _selectedIndex,
+                    onDestinationSelected: (value) =>
+                        setState(() => _selectedIndex = value),
+                    extended: constraints.maxWidth >= 1120,
+                    labelType: constraints.maxWidth >= 1120
+                        ? NavigationRailLabelType.none
+                        : NavigationRailLabelType.all,
+                    destinations: [
+                      for (final destination in _destinations)
+                        NavigationRailDestination(
                           icon: destination.icon,
                           selectedIcon: destination.selectedIcon,
                           label: Text(destination.label),
                         ),
-                      )
-                      .toList(),
+                    ],
+                  ),
                 ),
                 const VerticalDivider(width: 1),
                 Expanded(child: content),
@@ -93,12 +102,12 @@ class _AppShellState extends ConsumerState<AppShell> {
             ),
           );
         }
-
         return Scaffold(
           body: content,
           bottomNavigationBar: NavigationBar(
             selectedIndex: _selectedIndex,
-            onDestinationSelected: _selectDestination,
+            onDestinationSelected: (value) =>
+                setState(() => _selectedIndex = value),
             destinations: _destinations,
           ),
         );

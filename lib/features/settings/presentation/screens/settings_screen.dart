@@ -5,10 +5,12 @@ import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../core/widgets/section_title.dart';
+import '../../../../core/widgets/islamic_pattern.dart';
+import '../../../zikr/data/backup_service.dart';
+import '../../../zikr/presentation/widgets/zikr_widgets.dart';
+import '../../../zikr/presentation/zikr_provider.dart';
 import '../../domain/models/app_settings.dart';
 import '../providers/settings_provider.dart';
-import '../widgets/settings_input_sheets.dart';
 import '../widgets/settings_section.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -16,486 +18,460 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: AppSpacing.pagePadding,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SectionTitle(
-                  title: 'Settings',
-                  subtitle: 'Make Tasbeeh Tracker feel like your own.',
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final sectionWidth = constraints.maxWidth >= 760
-                        ? (constraints.maxWidth - AppSpacing.lg) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: AppSpacing.lg,
-                      runSpacing: AppSpacing.lg,
-                      children: [
-                        SizedBox(
-                          width: sectionWidth,
-                          child: const _AppearanceSection(),
-                        ),
-                        SizedBox(
-                          width: sectionWidth,
-                          child: const _CounterSection(),
-                        ),
-                        SizedBox(
-                          width: sectionWidth,
-                          child: const _DataSection(),
-                        ),
-                        SizedBox(
-                          width: sectionWidth,
-                          child: const _AboutSection(),
-                        ),
-                        SizedBox(
-                          width: sectionWidth,
-                          child: const _SupportSection(),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AppearanceSection extends ConsumerWidget {
-  const _AppearanceSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = ref.watch(
-      settingsProvider.select((state) => state.settings.theme),
-    );
-    final notifier = ref.read(settingsProvider.notifier);
-
-    return SettingsSection(
-      title: 'Appearance',
+    final state = ref.watch(settingsProvider);
+    final settings = state.settings;
+    return ListView(
+      key: const PageStorageKey('settings-scroll'),
       children: [
+        const _SettingsHeader(),
         Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<AppThemePreference>(
-              segments: const [
-                ButtonSegment(
-                  value: AppThemePreference.system,
-                  icon: Icon(Icons.brightness_auto_rounded),
-                  label: Text('System'),
-                ),
-                ButtonSegment(
-                  value: AppThemePreference.light,
-                  icon: Icon(Icons.light_mode_outlined),
-                  label: Text('Light'),
-                ),
-                ButtonSegment(
-                  value: AppThemePreference.dark,
-                  icon: Icon(Icons.dark_mode_outlined),
-                  label: Text('Dark'),
-                ),
-              ],
-              selected: {theme},
-              onSelectionChanged: (selection) {
-                notifier.setTheme(selection.first);
-              },
-              showSelectedIcon: false,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CounterSection extends ConsumerWidget {
-  const _CounterSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(
-      settingsProvider.select((state) => state.settings),
-    );
-    final notifier = ref.read(settingsProvider.notifier);
-
-    return SettingsSection(
-      title: 'Counter',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.flag_outlined),
-          title: const Text('Default Target'),
-          subtitle: Text('${settings.defaultTarget}'),
-          onTap: () => showModalBottomSheet<void>(
-            context: context,
-            isScrollControlled: true,
-            builder: (context) => DefaultTargetSheet(
-              currentTarget: settings.defaultTarget,
-              onSubmit: notifier.setDefaultTarget,
-            ),
-          ),
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.vibration_rounded),
-          title: const Text('Haptic Feedback'),
-          value: settings.hapticFeedbackEnabled,
-          onChanged: notifier.setHapticFeedback,
-        ),
-        SwitchListTile(
-          secondary: const Icon(Icons.animation_rounded),
-          title: const Text('Counter Animation'),
-          value: settings.counterAnimationEnabled,
-          onChanged: notifier.setCounterAnimation,
-        ),
-        ListTile(
-          leading: const Icon(Icons.speed_rounded),
-          title: const Text('Continuous Count Speed'),
-          subtitle: Text(_speedLabel(settings.continuousCountSpeed)),
-          onTap: () => _showSpeedSheet(
-            context,
-            settings.continuousCountSpeed,
-            notifier.setContinuousCountSpeed,
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _speedLabel(ContinuousCountSpeed speed) {
-    return switch (speed) {
-      ContinuousCountSpeed.slow => 'Slow',
-      ContinuousCountSpeed.normal => 'Normal',
-      ContinuousCountSpeed.fast => 'Fast',
-    };
-  }
-
-  Future<void> _showSpeedSheet(
-    BuildContext context,
-    ContinuousCountSpeed selected,
-    ValueChanged<ContinuousCountSpeed> onSelected,
-  ) {
-    return showModalBottomSheet<void>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final speed in ContinuousCountSpeed.values)
-              ListTile(
-                title: Text(_speedLabel(speed)),
-                selected: speed == selected,
-                trailing: speed == selected
-                    ? const Icon(Icons.check_rounded)
-                    : null,
-                onTap: () {
-                  onSelected(speed);
-                  Navigator.of(context).pop();
-                },
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            children: [
+              SettingsSection(
+                title: 'Appearance',
+                children: [_ThemeTile(settings: settings)],
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DataSection extends ConsumerWidget {
-  const _DataSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isProcessing = ref.watch(
-      settingsProvider.select((state) => state.isProcessingData),
-    );
-    final notifier = ref.read(settingsProvider.notifier);
-
-    return SettingsSection(
-      title: 'Data',
-      children: [
-        ListTile(
-          enabled: !isProcessing,
-          leading: const Icon(Icons.ios_share_rounded),
-          title: const Text('Export Data'),
-          onTap: () async {
-            final backup = await notifier.exportData();
-            if (context.mounted) {
-              await SharePlus.instance.share(
-                ShareParams(
-                  subject: 'Tasbeeh Tracker Backup',
-                  text: backup,
-                  sharePositionOrigin: _shareOrigin(context),
-                ),
-              );
-            }
-          },
-        ),
-        ListTile(
-          enabled: !isProcessing,
-          leading: const Icon(Icons.settings_backup_restore_rounded),
-          title: const Text('Import Backup'),
-          onTap: () async {
-            final imported = await showModalBottomSheet<bool>(
-              context: context,
-              isScrollControlled: true,
-              builder: (context) =>
-                  ImportBackupSheet(onSubmit: notifier.importData),
-            );
-            if (context.mounted && imported == true) {
-              _showMessage(context, 'Backup imported successfully.');
-            }
-          },
-        ),
-        _DestructiveTile(
-          title: 'Reset History',
-          icon: Icons.delete_sweep_outlined,
-          enabled: !isProcessing,
-          onConfirmed: notifier.resetHistory,
-        ),
-        _DestructiveTile(
-          title: 'Reset Statistics',
-          icon: Icons.restart_alt_rounded,
-          enabled: !isProcessing,
-          onConfirmed: notifier.resetStatistics,
-        ),
-        _DestructiveTile(
-          title: 'Reset Everything',
-          icon: Icons.delete_forever_outlined,
-          enabled: !isProcessing,
-          onConfirmed: notifier.resetEverything,
-        ),
-      ],
-    );
-  }
-}
-
-class _AboutSection extends ConsumerWidget {
-  const _AboutSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final version = ref.watch(
-      settingsProvider.select((state) => state.appVersion),
-    );
-    final build = ref.watch(
-      settingsProvider.select((state) => state.buildNumber),
-    );
-
-    return SettingsSection(
-      title: 'About',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.info_outline_rounded),
-          title: const Text('App Version'),
-          trailing: Text(version),
-        ),
-        ListTile(
-          leading: const Icon(Icons.numbers_rounded),
-          title: const Text('Build Number'),
-          trailing: Text(build),
-        ),
-        ListTile(
-          leading: const Icon(Icons.description_outlined),
-          title: const Text('Licenses'),
-          onTap: () => showLicensePage(
-            context: context,
-            applicationName: 'Tasbeeh Tracker',
-            applicationVersion: '$version ($build)',
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.privacy_tip_outlined),
-          title: const Text('Privacy Policy'),
-          onTap: () => _showInformationSheet(
-            context,
-            'Privacy Policy',
-            'Tasbeeh Tracker stores counter data locally on your device. '
-                'Backups are shared only when you explicitly export them.',
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.gavel_outlined),
-          title: const Text('Terms'),
-          onTap: () => _showInformationSheet(
-            context,
-            'Terms',
-            'Tasbeeh Tracker is provided as a personal remembrance aid. '
-                'You remain responsible for safeguarding exported backups.',
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.code_rounded),
-          title: const Text('Developer'),
-          subtitle: const Text('Musaddiq'),
-          onTap: () => _showInformationSheet(
-            context,
-            'Developer',
-            'Designed and developed with care by Musaddiq.',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SupportSection extends ConsumerWidget {
-  const _SupportSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final version = ref.watch(
-      settingsProvider.select((state) => state.appVersion),
-    );
-
-    return SettingsSection(
-      title: 'Support',
-      children: [
-        ListTile(
-          leading: const Icon(Icons.star_outline_rounded),
-          title: const Text('Rate App'),
-          onTap: () async {
-            final review = InAppReview.instance;
-            if (await review.isAvailable()) {
-              await review.requestReview();
-            } else if (context.mounted) {
-              _showMessage(context, 'Rating is unavailable on this device.');
-            }
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.share_outlined),
-          title: const Text('Share App'),
-          onTap: () => SharePlus.instance.share(
-            ShareParams(
-              text: 'Tasbeeh Tracker — a mindful companion for daily dhikr.',
-              sharePositionOrigin: _shareOrigin(context),
-            ),
-          ),
-        ),
-        ListTile(
-          leading: const Icon(Icons.bug_report_outlined),
-          title: const Text('Report Issue'),
-          onTap: () => SharePlus.instance.share(
-            ShareParams(
-              subject: 'Tasbeeh Tracker Issue',
-              text:
-                  'I found an issue in Tasbeeh Tracker v$version.\n\n'
-                  'What happened:\n',
-              sharePositionOrigin: _shareOrigin(context),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _DestructiveTile extends StatelessWidget {
-  const _DestructiveTile({
-    required this.title,
-    required this.icon,
-    required this.enabled,
-    required this.onConfirmed,
-  });
-
-  final String title;
-  final IconData icon;
-  final bool enabled;
-  final Future<void> Function() onConfirmed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListTile(
-      enabled: enabled,
-      leading: Icon(icon, color: theme.colorScheme.error),
-      title: Text(title, style: TextStyle(color: theme.colorScheme.error)),
-      onTap: () async {
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(title),
-            content: Text(
-              'This action cannot be undone. Do you want to continue?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSection(
+                title: 'Preferences',
+                children: [
+                  const ListTile(
+                    leading: Icon(Icons.language_outlined),
+                    title: Text('Language'),
+                    subtitle: Text('English · more languages coming later'),
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.vibration_outlined),
+                    title: const Text('Haptic feedback'),
+                    value: settings.hapticFeedbackEnabled,
+                    onChanged: ref.read(settingsProvider.notifier).setHaptics,
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.animation_outlined),
+                    title: const Text('Animations'),
+                    value: settings.animationsEnabled,
+                    onChanged: ref
+                        .read(settingsProvider.notifier)
+                        .setAnimations,
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.notifications_none_rounded),
+                    title: const Text('Reminders'),
+                    subtitle: const Text(
+                      'Unavailable until reminders are configured',
+                    ),
+                    value: settings.remindersEnabled,
+                    onChanged: null,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.label_outline),
+                    title: const Text('Default session label'),
+                    subtitle: Text(settings.defaultSessionLabel),
+                    onTap: () => _chooseLabel(context, ref, settings),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.flag_outlined),
+                    title: const Text('Default Zikr target'),
+                    subtitle: Text('${settings.defaultTarget}'),
+                    onTap: () => _changeTarget(context, ref, settings),
+                  ),
+                ],
               ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Continue'),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSection(
+                title: 'Zikr & Data',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.backup_outlined),
+                    title: const Text('Backup and Restore'),
+                    subtitle: const Text('Version 2 JSON · merge or replace'),
+                    onTap: () => _dataSheet(context, ref, settings),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.delete_sweep_outlined),
+                    title: const Text('Clear History'),
+                    onTap: () => _clearHistory(context, ref),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.restart_alt_rounded),
+                    title: const Text('Clear All Data'),
+                    onTap: () => _clearAll(context, ref),
+                  ),
+                ],
               ),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSection(
+                title: 'Support',
+                children: [
+                  const ListTile(
+                    leading: Icon(Icons.help_outline),
+                    title: Text('Help and Support'),
+                    subtitle: Text('support@example.com'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.bug_report_outlined),
+                    title: const Text('Report Issue'),
+                    onTap: () => SharePlus.instance.share(
+                      ShareParams(
+                        text:
+                            'Issue report for app version ${state.appVersion} '
+                            '(${state.buildNumber})',
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.star_outline),
+                    title: const Text('Rate App'),
+                    onTap: InAppReview.instance.openStoreListing,
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.share_outlined),
+                    title: const Text('Share App'),
+                    onTap: () => SharePlus.instance.share(
+                      ShareParams(
+                        text:
+                            'A calm, offline-first way to manage Zikr goals and sessions.',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSection(
+                title: 'About',
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.info_outline),
+                    title: const Text('Version'),
+                    subtitle: Text(
+                      '${state.appVersion} (${state.buildNumber})',
+                    ),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.balance_outlined),
+                    title: const Text('Licenses'),
+                    onTap: () => showLicensePage(context: context),
+                  ),
+                  const ListTile(
+                    leading: Icon(Icons.privacy_tip_outlined),
+                    title: Text('Privacy Policy'),
+                    subtitle: Text('All Zikr data remains on this device'),
+                  ),
+                  const ListTile(
+                    leading: Icon(Icons.description_outlined),
+                    title: Text('Terms'),
+                    subtitle: Text('Personal reflection and record keeping'),
+                  ),
+                  const ListTile(
+                    leading: Icon(Icons.code_outlined),
+                    title: Text('Developer'),
+                    subtitle: Text('Musaddiq'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
-        );
-        if (confirmed == true) {
-          await onConfirmed();
-          if (context.mounted) {
-            _showMessage(context, '$title completed.');
-          }
-        }
-      },
+        ),
+      ],
     );
   }
-}
 
-Future<void> _showInformationSheet(
-  BuildContext context,
-  String title,
-  String body,
-) {
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: Padding(
+  Future<void> _chooseLabel(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) async {
+    final label = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: RadioGroup<String>(
+          groupValue: settings.defaultSessionLabel,
+          onChanged: (value) => Navigator.pop(context, value),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final item in const [
+                'Morning',
+                'After Fajr',
+                'Afternoon',
+                'Evening',
+                'Night',
+                'Custom',
+              ])
+                RadioListTile<String>(title: Text(item), value: item),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (label != null) {
+      await ref.read(settingsProvider.notifier).setDefaultLabel(label);
+    }
+  }
+
+  Future<void> _changeTarget(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) async {
+    final controller = TextEditingController(text: '${settings.defaultTarget}');
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Default Zikr target'),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(labelText: 'Target'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              if (await ref
+                  .read(settingsProvider.notifier)
+                  .setDefaultTarget(controller.text)) {
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+  }
+
+  Future<void> _dataSheet(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettings settings,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      builder: (sheetContext) => Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Backup and Restore',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: AppSpacing.md),
-            Text(body),
-            const SizedBox(height: AppSpacing.lg),
-            if (title == 'Developer')
-              TextButton.icon(
-                onPressed: () {
-                  Clipboard.setData(
-                    const ClipboardData(text: 'support@tasbeehtracker.app'),
+            FilledButton.tonalIcon(
+              onPressed: () async {
+                final data = await ref
+                    .read(zikrProvider.notifier)
+                    .exportBackup(preferences: settings.toMap());
+                await Clipboard.setData(ClipboardData(text: data));
+                if (sheetContext.mounted) {
+                  ScaffoldMessenger.of(sheetContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Version 2 backup copied to clipboard.'),
+                    ),
                   );
-                  Navigator.of(context).pop();
-                },
-                icon: const Icon(Icons.copy_rounded),
-                label: const Text('Copy Support Email'),
-              ),
+                }
+              },
+              icon: const Icon(Icons.copy_outlined),
+              label: const Text('Export Data'),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: () async {
+                Navigator.pop(sheetContext);
+                await _importDialog(context, ref);
+              },
+              icon: const Icon(Icons.restore_outlined),
+              label: const Text('Import Data'),
+            ),
           ],
         ),
       ),
-    ),
+    );
+  }
+
+  Future<void> _importDialog(BuildContext context, WidgetRef ref) async {
+    final controller = TextEditingController();
+    var mode = ImportMode.merge;
+    String? error;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Import Version 2 backup'),
+          content: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  maxLines: 8,
+                  decoration: InputDecoration(
+                    labelText: 'Paste backup JSON',
+                    errorText: error,
+                  ),
+                ),
+                RadioGroup<ImportMode>(
+                  groupValue: mode,
+                  onChanged: (value) {
+                    if (value != null) setDialogState(() => mode = value);
+                  },
+                  child: const Column(
+                    children: [
+                      RadioListTile<ImportMode>(
+                        title: Text('Merge'),
+                        subtitle: Text(
+                          'Keep existing IDs and add backup records',
+                        ),
+                        value: ImportMode.merge,
+                      ),
+                      RadioListTile<ImportMode>(
+                        title: Text('Replace'),
+                        subtitle: Text('Replace all current Zikr and sessions'),
+                        value: ImportMode.replace,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                try {
+                  final summary = await ref
+                      .read(zikrProvider.notifier)
+                      .importBackup(controller.text, mode);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Imported ${summary.zikrCount} Zikr and '
+                          '${summary.sessionCount} sessions.',
+                        ),
+                      ),
+                    );
+                  }
+                } on FormatException catch (exception) {
+                  setDialogState(() => error = exception.message);
+                }
+              },
+              child: const Text('Import'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+  }
+
+  Future<void> _clearHistory(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Clear session history?',
+      message: 'All completed totals will return to zero.',
+      confirmLabel: 'Clear History',
+      destructive: true,
+    );
+    if (confirmed) await ref.read(zikrProvider.notifier).clearHistory();
+  }
+
+  Future<void> _clearAll(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Clear all data?',
+      message:
+          'Every Zikr, session, and preference will be permanently removed.',
+      confirmLabel: 'Clear All Data',
+      destructive: true,
+    );
+    if (confirmed) {
+      await ref.read(zikrProvider.notifier).clearAll();
+      await ref.read(settingsProvider.notifier).reset();
+    }
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader();
+  @override
+  Widget build(BuildContext context) => Stack(
+    children: [
+      Container(
+        width: double.infinity,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          MediaQuery.paddingOf(context).top + AppSpacing.xl,
+          AppSpacing.xl,
+          AppSpacing.xl,
+        ),
+        color: Theme.of(context).colorScheme.primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Settings',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Shape the experience around your journey',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onPrimary.withValues(alpha: 0.82),
+              ),
+            ),
+          ],
+        ),
+      ),
+      const Positioned.fill(child: IslamicPattern(opacity: 0.12)),
+    ],
   );
 }
 
-void _showMessage(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-}
-
-Rect? _shareOrigin(BuildContext context) {
-  final renderObject = context.findRenderObject();
-  if (renderObject is! RenderBox || !renderObject.hasSize) {
-    return null;
-  }
-  return renderObject.localToGlobal(Offset.zero) & renderObject.size;
+class _ThemeTile extends ConsumerWidget {
+  const _ThemeTile({required this.settings});
+  final AppSettings settings;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      RadioGroup<AppThemePreference>(
+        groupValue: settings.theme,
+        onChanged: (value) {
+          if (value != null) {
+            ref.read(settingsProvider.notifier).setTheme(value);
+          }
+        },
+        child: Column(
+          children: [
+            for (final theme in AppThemePreference.values)
+              RadioListTile<AppThemePreference>(
+                title: Text(switch (theme) {
+                  AppThemePreference.system => 'System',
+                  AppThemePreference.light => 'Light',
+                  AppThemePreference.dark => 'Dark',
+                }),
+                value: theme,
+              ),
+          ],
+        ),
+      );
 }

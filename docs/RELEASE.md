@@ -1,58 +1,37 @@
-# Release process
+# Version 2 Release
 
-## v1.0 identity
-
-- Package: `1.0.0+1`
-- Android application ID: `com.musaddiq.tasbeehtracker`
-- Android version name/code: derived from `pubspec.yaml`
-
-## Preflight
+## Quality gate
 
 ```bash
-flutter clean
-flutter pub get
 dart format .
 flutter analyze
 flutter test
-```
-
-The gate requires zero analyzer issues and zero failing tests.
-
-Current Flutter tooling prints a forward-compatibility notice because
-`in_app_review`, `package_info_plus`, and `share_plus` still apply the legacy
-Kotlin Gradle plugin. Builds succeed; dependency upgrades should be reviewed as
-those plugins adopt Built-in Kotlin.
-
-## Signing
-
-Copy `android/key.properties.example` to `android/key.properties` and replace
-all placeholders. Keep the properties file and keystore out of version control.
-Without secrets, release builds use the debug key for local verification only.
-
-## Build
-
-```bash
 flutter build apk --release
-flutter build appbundle
+flutter build appbundle --release
 ```
 
-Artifacts:
+All commands must succeed. Review Home, Zikr, History, Reflection, details,
+forms, and Settings in light/dark themes and phone portrait, landscape, and wide
+layouts. Confirm Arabic rendering, large text, semantics, session totals, backup
+validation, and the absence of obsolete terminology.
 
-- `build/app/outputs/flutter-apk/app-release.apk`
-- `build/app/outputs/bundle/release/app-release.aab`
+## Android
 
-## Verification
+Copy `android/key.properties.example` to `android/key.properties`, use a private
+keystore, and provide passwords through the ignored file. Without production
+credentials, local release builds intentionally use the debug key so CI can
+verify compilation; that artifact is not store-publishable.
 
-- Install on a clean device and verify first launch, icon, and splash.
-- Exercise counter tap/hold, haptics, undo, reset, and restoration.
-- Verify history paging/search/filter and statistics refresh.
-- Export, reset, and restore a backup.
-- Check screen-reader announcements and keyboard focus order.
-- Confirm theme preferences persist.
-- Confirm production signing before store upload.
+Version name and code come from `pubspec.yaml`. Adaptive icon and Android 12+
+splash resources are already configured.
 
-## Rollback
+## Artifacts
 
-Retain the previous signed artifact. If verification fails after publishing,
-stop rollout, restore the prior artifact, increment the build number, and ship a
-corrected bundle.
+- APK: `build/app/outputs/flutter-apk/app-release.apk`
+- AAB: `build/app/outputs/bundle/release/app-release.aab`
+
+## Data safety
+
+Export a Version 2 JSON backup before release upgrades. Version 1 boxes remain
+isolated and are never opened as Version 2 sessions. Exercise both merge and
+replace restore modes on disposable data before distribution.

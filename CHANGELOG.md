@@ -1,20 +1,14 @@
 # Changelog
 
-## 1.0.0+1 — 2026-07-30
+## 2.0.0+2 — 2026-07-30
 
-### Added
-
-- Material 3 design system with Inter typography and light/dark themes.
-- Premium counter with continuous press, undo, haptics, and custom targets.
-- Offline Hive persistence, searchable history, and versioned backup restore.
-- Cached statistics, streaks, completion metrics, charts, and insights.
-- Persistent settings, data controls, metadata, licenses, and support actions.
-- Responsive navigation, landscape support, and accessibility semantics.
-- Unit, widget, repository, and provider tests.
-- Android adaptive icon, branded splash, and release-signing template.
-
-### Quality
-
-- Removed unused and duplicate shared code.
-- Consolidated repeated formatting and error-state implementations.
-- Added release documentation and repeatable verification steps.
+- Rebuilt the application around multiple Zikr goals and completed sessions.
+- Added Home, Zikr, History, Reflection, and Settings destinations.
+- Added Zikr creation, editing, favorites, archive/restore, and deletion.
+- Added session creation, editing, deletion, safe undo, labels, notes, and dates.
+- Added session-source-of-truth total repair and isolated Version 2 Hive boxes.
+- Added paginated history, search, date filters, and individual Zikr filtering.
+- Added cached reflection metrics, streaks, projections, and accessible charts.
+- Added validated Version 2 JSON backup with explicit merge and replace modes.
+- Added responsive layouts, RTL Arabic greeting, semantics, and contrast tests.
+- Replaced all obsolete single-count behavior and its tests.

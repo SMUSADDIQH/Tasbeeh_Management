@@ -21,7 +21,7 @@ class TasbeehTrackerApp extends ConsumerWidget {
     };
 
     return MaterialApp(
-      title: 'Tasbeeh-Tracker',
+      title: 'Zikr',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

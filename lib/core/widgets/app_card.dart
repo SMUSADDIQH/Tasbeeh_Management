@@ -9,12 +9,14 @@ class AppCard extends StatelessWidget {
     required this.child,
     this.padding = AppSpacing.cardPadding,
     this.onTap,
+    this.color,
     super.key,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class AppCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: color ?? theme.colorScheme.surface,
         borderRadius: AppRadius.card,
         boxShadow: shadows,
       ),

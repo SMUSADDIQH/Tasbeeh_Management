@@ -1,86 +1,11 @@
-# Tasbeeh-Tracker Coding Standards
+# Coding Standards
 
-## Naming Conventions
-
-### Files
-
-Use snake_case.
-
-Examples:
-
-- app_theme.dart
-- home_screen.dart
-- progress_card.dart
-
----
-
-### Classes
-
-Use PascalCase.
-
-Examples:
-
-- HomeScreen
-- ProgressCard
-- TasbeehModel
-
----
-
-### Variables
-
-Use camelCase.
-
-Examples:
-
-- totalCount
-- remainingCount
-- selectedTasbeeh
-
----
-
-### Methods
-
-Use camelCase.
-
-Examples:
-
-- calculateProgress()
-- addTasbeeh()
-- resetCounter()
-
----
-
-### Constants
-
-Compile-time constants:
-
-```dart
-const appName = 'Tasbeeh-Tracker';
-const maxTarget = 125000;
-```
-
----
-
-### Private Members
-
-Prefix with `_`.
-
-Examples:
-
-```dart
-final _controller = TextEditingController();
-
-void _saveData() {}
-```
-
----
-
-### Folder Names
-
-Use snake_case.
-
-Examples:
-
-- presentation
-- home_screen
-- reusable_widgets
+- Keep domain language centered on Zikr and completed sessions.
+- Keep business rules in repositories and Riverpod notifiers.
+- Use immutable state and injected clocks for date-sensitive logic.
+- Treat sessions as the source of truth for completed totals.
+- Use theme colors, shared spacing/radius tokens, and const constructors.
+- Provide semantic labels for charts, progress, rows, and icon-only controls.
+- Use lazy builders and bounded persistence reads for growing collections.
+- Reject malformed backup content before mutating stored data.
+- Run formatting, analyzer, tests, and both Android release builds before commit.
