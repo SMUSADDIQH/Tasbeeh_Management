@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Radial Gradient (#003B2F to #00281F) -->
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#003B2F"/>
+      <stop offset="70%" stop-color="#00281F"/>
+      <stop offset="100%" stop-color="#001A14"/>
+    </radialGradient>
+
+    <!-- Metallic Gold Shaders -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F2D07A"/>
+      <stop offset="45%" stop-color="#E4B54C"/>
+      <stop offset="85%" stop-color="#D6A53C"/>
+      <stop offset="100%" stop-color="#8A5A1B"/>
+    </linearGradient>
+
+    <!-- Drop Shadow Filter -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="4" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- 1. Requirement #4: Luxury Squircle Base & Gold Border (#D6A53C) -->
+  <rect x="32" y="32" width="960" height="960" rx="210" ry="210" fill="url(#bgGrad)" stroke="#D6A53C" stroke-width="12" />
+
+  <!-- 2. Requirement #8: Subtle Background Pattern (6% Opacity) -->
+  <g opacity="0.06" stroke="#F2D07A" stroke-width="4">
+    <path d="M 0,170 H 1024 M 0,512 H 1024 M 0,854 H 1024 M 170,0 V 1024 M 512,0 V 1024 M 854,0 V 1024 M 0,0 L 1024,1024 M 1024,0 L 0,1024" />
+  </g>
+
+  <!-- 3. Requirements #1, #3, #5, #6, #7, #9: Centered Master Emblem at 70% Scale -->
+  <g filter="url(#shadow)" transform="translate(0, -20)">
+    <!-- Requirement #6: Bevelled Metallic Gold Crescent Moon -->
+    <path fill="url(#goldGrad)" d="M 460 270 A 155 155 0 1 0 615 425 A 125 125 0 1 1 460 270 Z" />
+
+    <!-- Requirement #7: Refined 8-Pointed Khatam Star Rosette -->
+    <path fill="url(#goldGrad)" d="M 550 330 L 565 360 L 595 365 L 570 385 L 580 415 L 550 398 L 520 415 L 530 385 L 505 365 L 535 360 Z" />
+
+    <!-- Requirement #5: Graduated 33 Gold Beads Rosary Ring -->
+    <g fill="url(#goldGrad)">
+      <circle cx="512" cy="170" r="22" />
+      <circle cx="562" cy="173" r="22" />
+      <circle cx="612" cy="181" r="22" />
+      <circle cx="659" cy="194" r="22" />
+      <circle cx="701" cy="213" r="22" />
+      <circle cx="736" cy="238" r="23" />
+      <circle cx="764" cy="268" r="23" />
+      <circle cx="783" cy="302" r="23" />
+      <circle cx="793" cy="339" r="24" />
+      <circle cx="794" cy="379" r="24" />
+      <circle cx="785" cy="419" r="24" />
+      <circle cx="768" cy="458" r="24" />
+      <circle cx="741" cy="494" r="25" />
+      <circle cx="707" cy="527" r="25" />
+      <circle cx="666" cy="554" r="25" />
+      <circle cx="620" cy="575" r="25" />
+      <circle cx="570" cy="589" r="26" />
+      <circle cx="454" cy="589" r="26" />
+      <circle cx="404" cy="575" r="25" />
+      <circle cx="358" cy="554" r="25" />
+      <circle cx="317" cy="527" r="25" />
+      <circle cx="283" cy="494" r="25" />
+      <circle cx="256" cy="458" r="24" />
+      <circle cx="239" cy="419" r="24" />
+      <circle cx="230" cy="379" r="24" />
+      <circle cx="231" cy="339" r="24" />
+      <circle cx="241" cy="302" r="23" />
+      <circle cx="260" cy="268" r="23" />
+      <circle cx="288" cy="238" r="23" />
+      <circle cx="323" cy="213" r="22" />
+      <circle cx="365" cy="194" r="22" />
+      <circle cx="412" cy="181" r="22" />
+      <circle cx="462" cy="173" r="22" />
+    </g>
+
+    <!-- Requirement #1 & #5: Imamah Main Head Bead -->
+    <circle cx="512" cy="622" r="38" fill="url(#goldGrad)" />
+
+    <!-- Tassel Metallic Cap -->
+    <polygon points="478,674 546,674 566,740 458,740" fill="#D6A53C" />
+
+    <!-- Requirement #1: Silky Tassel Fringe Threads -->
+    <polygon points="454,750 570,750 600,910 424,910" fill="url(#goldGrad)" />
+  </g>
+</svg>

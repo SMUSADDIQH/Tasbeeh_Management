@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_radius.dart';
 import '../../app/theme/app_shadows.dart';
 import '../../app/theme/app_spacing.dart';
@@ -10,6 +11,9 @@ class AppCard extends StatelessWidget {
     this.padding = AppSpacing.cardPadding,
     this.onTap,
     this.color,
+    this.gradient,
+    this.borderColor,
+    this.borderRadius,
     super.key,
   });
 
@@ -17,6 +21,9 @@ class AppCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
   final Color? color;
+  final Gradient? gradient;
+  final Color? borderColor;
+  final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -25,15 +32,22 @@ class AppCard extends StatelessWidget {
         ? AppShadows.cardDark
         : AppShadows.card;
 
+    final radius = borderRadius ?? AppRadius.card;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: color ?? theme.colorScheme.surface,
-        borderRadius: AppRadius.card,
+        color: gradient == null ? (color ?? theme.colorScheme.surface) : null,
+        gradient: gradient,
+        borderRadius: radius,
+        border: Border.all(
+          color: borderColor ?? AppColors.goldMuted.withValues(alpha: 0.45),
+          width: 1.2,
+        ),
         boxShadow: shadows,
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: AppRadius.card,
+        borderRadius: radius,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,

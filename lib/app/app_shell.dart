@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/widgets/islamic_artwork.dart';
 import '../features/settings/presentation/providers/settings_provider.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/zikr/presentation/screens/history_screen.dart';
@@ -70,48 +71,64 @@ class _AppShellState extends ConsumerState<AppShell> {
       const ReflectionScreen(),
       const SettingsScreen(),
     ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final content = IndexedStack(index: _selectedIndex, children: screens);
-        if (constraints.maxWidth >= 840) {
-          return Scaffold(
-            body: Row(
-              children: [
-                SafeArea(
-                  child: NavigationRail(
-                    selectedIndex: _selectedIndex,
-                    onDestinationSelected: (value) =>
-                        setState(() => _selectedIndex = value),
-                    extended: constraints.maxWidth >= 1120,
-                    labelType: constraints.maxWidth >= 1120
-                        ? NavigationRailLabelType.none
-                        : NavigationRailLabelType.all,
-                    destinations: [
-                      for (final destination in _destinations)
-                        NavigationRailDestination(
-                          icon: destination.icon,
-                          selectedIcon: destination.selectedIcon,
-                          label: Text(destination.label),
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const TopArchHeaderBanner(),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final content = IndexedStack(index: _selectedIndex, children: screens);
+                  if (constraints.maxWidth >= 840) {
+                    return Row(
+                      children: [
+                        NavigationRail(
+                          selectedIndex: _selectedIndex,
+                          onDestinationSelected: (value) =>
+                              setState(() => _selectedIndex = value),
+                          extended: constraints.maxWidth >= 1120,
+                          labelType: constraints.maxWidth >= 1120
+                              ? NavigationRailLabelType.none
+                              : NavigationRailLabelType.all,
+                          destinations: [
+                            for (final destination in _destinations)
+                              NavigationRailDestination(
+                                icon: destination.icon,
+                                selectedIcon: destination.selectedIcon,
+                                label: Text(destination.label),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
-                ),
-                const VerticalDivider(width: 1),
-                Expanded(child: content),
-              ],
+                        const VerticalDivider(width: 1),
+                        Expanded(child: content),
+                      ],
+                    );
+                  }
+                  return Scaffold(
+                    body: content,
+                    bottomNavigationBar: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                      ),
+                      child: NavigationBar(
+                        selectedIndex: _selectedIndex,
+                        onDestinationSelected: (value) =>
+                            setState(() => _selectedIndex = value),
+                        destinations: _destinations,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          );
-        }
-        return Scaffold(
-          body: content,
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (value) =>
-                setState(() => _selectedIndex = value),
-            destinations: _destinations,
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

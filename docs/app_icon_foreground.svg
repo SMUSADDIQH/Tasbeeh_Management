@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Requirement COLOR: Premium Metallic Gold Shader Palette (#E5B84B, #D8A03A, #F3D27A, #C88D22) -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F3D27A"/>
+      <stop offset="35%" stop-color="#E5B84B"/>
+      <stop offset="70%" stop-color="#D8A03A"/>
+      <stop offset="100%" stop-color="#C88D22"/>
+    </linearGradient>
+
+    <radialGradient id="beadShader" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#FFF4C0"/>
+      <stop offset="30%" stop-color="#F3D27A"/>
+      <stop offset="75%" stop-color="#E5B84B"/>
+      <stop offset="100%" stop-color="#B87D18"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 
+    Android Adaptive Icon Foreground Layer (Transparent Background)
+    Artwork occupies ~74% of the 1024x1024 canvas to ensure safe-zone padding.
+  -->
+  <g id="adaptive_icon_foreground" transform="translate(0, -10)">
+    
+    <!-- 1. CRESCENT: Thicker, smoother metallic gold crescent moon -->
+    <path fill="url(#goldGradient)" d="M 445 275 A 160 160 0 1 0 605 435 A 130 130 0 1 1 445 275 Z" />
+
+    <!-- 2. STAR: Refined 8-Pointed Islamic Khatam Star Rosette -->
+    <path fill="url(#goldGradient)" d="M 535 330 L 550 360 L 580 365 L 555 385 L 565 415 L 535 398 L 505 415 L 515 385 L 490 365 L 520 360 Z" />
+
+    <!-- 3. BEADS: Larger, perfectly spaced 33 Tasbeeh beads along a circle -->
+    <g fill="url(#beadShader)">
+      <circle cx="512" cy="170" r="24" />
+      <circle cx="562" cy="173" r="24" />
+      <circle cx="612" cy="181" r="24" />
+      <circle cx="659" cy="194" r="24" />
+      <circle cx="701" cy="213" r="24" />
+      <circle cx="736" cy="238" r="25" />
+      <circle cx="764" cy="268" r="25" />
+      <circle cx="783" cy="302" r="25" />
+      <circle cx="793" cy="339" r="25" />
+      <circle cx="794" cy="379" r="25" />
+      <circle cx="785" cy="419" r="25" />
+      <circle cx="768" cy="458" r="25" />
+      <circle cx="741" cy="494" r="26" />
+      <circle cx="707" cy="527" r="26" />
+      <circle cx="666" cy="554" r="26" />
+      <circle cx="620" cy="575" r="26" />
+      <circle cx="570" cy="589" r="26" />
+      <circle cx="454" cy="589" r="26" />
+      <circle cx="404" cy="575" r="26" />
+      <circle cx="358" cy="554" r="26" />
+      <circle cx="317" cy="527" r="26" />
+      <circle cx="283" cy="494" r="26" />
+      <circle cx="256" cy="458" r="25" />
+      <circle cx="239" cy="419" r="25" />
+      <circle cx="230" cy="379" r="25" />
+      <circle cx="231" cy="339" r="25" />
+      <circle cx="241" cy="302" r="25" />
+      <circle cx="260" cy="268" r="25" />
+      <circle cx="288" cy="238" r="25" />
+      <circle cx="323" cy="213" r="24" />
+      <circle cx="365" cy="194" r="24" />
+      <circle cx="412" cy="181" r="24" />
+      <circle cx="462" cy="173" r="24" />
+    </g>
+
+    <!-- 4. TASSEL: Imamah Main Head Bead & Symmetrical Gold Silk Tassel -->
+    <circle cx="512" cy="625" r="39" fill="url(#goldGradient)" />
+
+    <!-- Tassel Metallic Cap -->
+    <polygon points="476,678 548,678 568,746 456,746" fill="#D8A03A" />
+
+    <!-- Silky Tassel Fringe Threads -->
+    <polygon points="450,756 574,756 606,916 418,916" fill="url(#goldGradient)" />
+  </g>
+</svg>

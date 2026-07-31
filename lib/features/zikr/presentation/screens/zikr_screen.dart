@@ -55,18 +55,24 @@ class ZikrScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.md),
                   SegmentedButton<ZikrFilter>(
                     showSelectedIcon: false,
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: ZikrFilter.active,
-                        label: Text('Active'),
+                        label: Text(
+                          'Active (${state.zikr.where((i) => i.status == ZikrStatus.active).length})',
+                        ),
                       ),
                       ButtonSegment(
                         value: ZikrFilter.completed,
-                        label: Text('Completed'),
+                        label: Text(
+                          'Completed (${state.zikr.where((i) => i.status == ZikrStatus.completed).length})',
+                        ),
                       ),
                       ButtonSegment(
                         value: ZikrFilter.archived,
-                        label: Text('Archived'),
+                        label: Text(
+                          'Archived (${state.zikr.where((i) => i.status == ZikrStatus.archived).length})',
+                        ),
                       ),
                     ],
                     selected: {state.zikrFilter},

@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../core/widgets/islamic_pattern.dart';
+import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/islamic_artwork.dart';
 import '../../../zikr/data/backup_service.dart';
 import '../../../zikr/presentation/widgets/zikr_widgets.dart';
 import '../../../zikr/presentation/zikr_provider.dart';
@@ -30,7 +32,9 @@ class SettingsScreen extends ConsumerWidget {
             children: [
               SettingsSection(
                 title: 'Appearance',
-                children: [_ThemeTile(settings: settings)],
+                children: [
+                  _ThemeTile(settings: settings),
+                ],
               ),
               const SizedBox(height: AppSpacing.lg),
               SettingsSection(
@@ -408,44 +412,60 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _SettingsHeader extends StatelessWidget {
+class _SettingsHeader extends ConsumerWidget {
   const _SettingsHeader();
   @override
-  Widget build(BuildContext context) => Stack(
-    children: [
-      Container(
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          MediaQuery.paddingOf(context).top + AppSpacing.xl,
-          AppSpacing.xl,
-          AppSpacing.xl,
-        ),
-        color: Theme.of(context).colorScheme.primary,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Settings',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Theme.of(context).colorScheme.onPrimary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Shape the experience around your journey',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onPrimary.withValues(alpha: 0.82),
-              ),
-            ),
-          ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.goldMuted.withValues(alpha: 0.3),
+            width: 1,
+          ),
         ),
       ),
-      const Positioned.fill(child: IslamicPattern(opacity: 0.12)),
-    ],
-  );
+      child: Stack(
+        children: [
+          const Positioned.fill(
+            child: GreetingHeaderBackgroundWidget(),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Settings',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: AppColors.goldBright,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Customize your experience',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.gold.withValues(alpha: 0.85),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                const IslamicAppLogo(size: 48, borderRadius: 12),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ThemeTile extends ConsumerWidget {

@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_radius.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
@@ -55,7 +57,9 @@ class ScreenHeader extends StatelessWidget {
               header: true,
               child: Text(
                 title,
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.goldBright,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -97,6 +101,8 @@ class ZikrCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final identity = Color(zikr.colorValue);
+    final percentText = '${(zikr.progress * 100).toStringAsFixed(1)}%';
+
     return Semantics(
       button: true,
       label:
@@ -105,127 +111,193 @@ class ZikrCard extends StatelessWidget {
       hint: 'Open Zikr details',
       child: AppCard(
         onTap: onOpen,
+        color: AppColors.lightCardBg,
+        borderColor: AppColors.goldMuted,
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  backgroundColor: identity.withValues(alpha: 0.14),
-                  foregroundColor: identity,
-                  child: Icon(zikrIcon(zikr.iconCodePoint)),
+                // Circular Progress Indicator Ring on Left
+                SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox.expand(
+                        child: CircularProgressIndicator(
+                          value: zikr.progress,
+                          strokeWidth: 7,
+                          strokeCap: StrokeCap.round,
+                          color: identity,
+                          backgroundColor: identity.withValues(alpha: 0.15),
+                          semanticsLabel: '$percentText complete',
+                        ),
+                      ),
+                      Text(
+                        percentText,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: AppColors.lightCardText,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
+                // Title and Arabic script on Right
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        zikr.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleMedium,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: identity.withValues(alpha: 0.14),
+                              borderRadius: AppRadius.pillBorder,
+                            ),
+                            child: Icon(
+                              zikrIcon(zikr.iconCodePoint),
+                              size: 16,
+                              color: identity,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              zikr.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: AppColors.lightCardText,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            tooltip: zikr.isFavorite
+                                ? 'Remove from favorites'
+                                : 'Add to favorites',
+                            onPressed: onFavorite,
+                            icon: Icon(
+                              zikr.isFavorite ? Icons.star_rounded : Icons.star_outline,
+                              color: zikr.isFavorite
+                                  ? AppColors.goldMuted
+                                  : AppColors.lightCardTextMuted,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            iconColor: AppColors.lightCardTextMuted,
+                            tooltip: 'More actions for ${zikr.name}',
+                            onSelected: (value) {
+                              switch (value) {
+                                case 'edit':
+                                  onEdit();
+                                case 'archive':
+                                  onArchive();
+                                case 'delete':
+                                  onDelete();
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                              PopupMenuItem(
+                                value: 'archive',
+                                child: Text(
+                                  zikr.status == ZikrStatus.archived
+                                      ? 'Restore'
+                                      : 'Archive',
+                                ),
+                              ),
+                              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                            ],
+                          ),
+                        ],
                       ),
-                      if (zikr.arabicName != null)
+                      if (zikr.arabicName != null) ...[
+                        const SizedBox(height: 2),
                         Directionality(
                           textDirection: TextDirection.rtl,
                           child: Text(
                             zikr.arabicName!,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyLarge,
+                            style: AppTypography.arabicScript(
+                              color: AppColors.lightCardText,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
+                      ],
+                      const SizedBox(height: AppSpacing.sm),
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: '${formatQuantity(zikr.completed)} ',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: AppColors.lightCardText,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            TextSpan(
+                              text: '/ ${formatQuantity(zikr.target)} ',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.lightCardTextMuted,
+                              ),
+                            ),
+                            TextSpan(
+                              text: 'Completed',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.lightCardTextMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: identity.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${formatQuantity(zikr.remaining)} Remaining',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: identity,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                IconButton(
-                  tooltip: zikr.isFavorite
-                      ? 'Remove from favorites'
-                      : 'Add to favorites',
-                  onPressed: onFavorite,
-                  icon: Icon(
-                    zikr.isFavorite ? Icons.star_rounded : Icons.star_outline,
-                    color: zikr.isFavorite ? theme.colorScheme.secondary : null,
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  tooltip: 'More actions for ${zikr.name}',
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'edit':
-                        onEdit();
-                      case 'archive':
-                        onArchive();
-                      case 'delete':
-                        onDelete();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                    PopupMenuItem(
-                      value: 'archive',
-                      child: Text(
-                        zikr.status == ZikrStatus.archived
-                            ? 'Restore'
-                            : 'Archive',
-                      ),
-                    ),
-                    const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                  ],
-                ),
-              ],
-            ),
-            if (zikr.description != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                zikr.description!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            ClipRRect(
-              borderRadius: AppRadius.pillBorder,
-              child: LinearProgressIndicator(
-                value: zikr.progress,
-                minHeight: 8,
-                color: identity,
-                backgroundColor: identity.withValues(alpha: 0.12),
-                semanticsLabel:
-                    '${(zikr.progress * 100).round()} percent complete',
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: _Value(
-                    label: 'Completed',
-                    value: formatQuantity(zikr.completed),
-                  ),
-                ),
-                Expanded(
-                  child: _Value(
-                    label: 'Remaining',
-                    value: formatQuantity(zikr.remaining),
-                  ),
-                ),
-                Text(
-                  '${(zikr.progress * 100).toStringAsFixed(1)}%',
-                  style: theme.textTheme.titleSmall?.copyWith(color: identity),
                 ),
               ],
             ),
             if (zikr.status != ZikrStatus.archived) ...[
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.md),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.emerald950,
+                    side: BorderSide(color: AppColors.goldMuted.withValues(alpha: 0.6)),
+                    backgroundColor: AppColors.gold.withValues(alpha: 0.15),
+                  ),
                   onPressed: onAddSession,
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text('Add Session'),
                 ),
               ),
@@ -356,25 +428,7 @@ class EmptyJourney extends StatelessWidget {
   );
 }
 
-class _Value extends StatelessWidget {
-  const _Value({required this.label, required this.value});
-  final String label;
-  final String value;
 
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(value, style: Theme.of(context).textTheme.titleSmall),
-      Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    ],
-  );
-}
 
 Future<ZikrDraft?> showZikrForm(
   BuildContext context, {
@@ -415,7 +469,9 @@ Future<ZikrDraft?> showZikrForm(
             children: [
               Text(
                 existing == null ? 'New Zikr' : 'Edit Zikr',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.goldBright,
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
@@ -671,7 +727,9 @@ Future<void> showSessionForm(
           children: [
             Text(
               existing == null ? 'Add Session' : 'Edit Session',
-              style: Theme.of(context).textTheme.headlineSmall,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.goldBright,
+                ),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(zikr.name),

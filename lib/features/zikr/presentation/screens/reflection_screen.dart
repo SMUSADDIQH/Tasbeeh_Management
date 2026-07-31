@@ -2,7 +2,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../domain/zikr_models.dart';
@@ -28,9 +30,14 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
       key: const PageStorageKey('reflection-scroll'),
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        const ScreenHeader(
+        ScreenHeader(
           title: 'Reflection',
           subtitle: 'Your spiritual journey insights',
+          action: IconButton.filledTonal(
+            tooltip: 'Choose period',
+            onPressed: () {},
+            icon: const Icon(Icons.calendar_today_rounded),
+          ),
         ),
         const SizedBox(height: AppSpacing.lg),
         SingleChildScrollView(
@@ -82,110 +89,270 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
               );
             }
             final data = snapshot.data!;
+            final activeZikrs = zikr.where((z) => z.status == ZikrStatus.active).toList();
+
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth >= 760
-                        ? (constraints.maxWidth - AppSpacing.md * 2) / 3
-                        : (constraints.maxWidth - AppSpacing.md) / 2;
-                    return Wrap(
-                      spacing: AppSpacing.md,
-                      runSpacing: AppSpacing.md,
-                      children: [
-                        _ReflectionMetric(
-                          width: width,
-                          label: 'Total Completed',
-                          value: formatQuantity(data.total),
-                          icon: Icons.auto_awesome_outlined,
-                        ),
-                        _ReflectionMetric(
-                          width: width,
-                          label: 'Average per active day',
-                          value: formatQuantity(data.averagePerActiveDay),
-                          icon: Icons.calendar_today_outlined,
-                        ),
-                        _ReflectionMetric(
-                          width: width,
-                          label: 'Best Day',
-                          value: data.bestDay == null
-                              ? '—'
-                              : weekdayName(data.bestDay!),
-                          icon: Icons.workspace_premium_outlined,
-                        ),
-                        _ReflectionMetric(
-                          width: width,
-                          label: 'Overall Completion',
-                          value:
-                              '${(data.overallCompletion * 100).toStringAsFixed(1)}%',
-                          icon: Icons.donut_large_outlined,
-                        ),
-                        _ReflectionMetric(
-                          width: width,
-                          label: 'Current Streak',
-                          value: '${data.currentStreak} days',
-                          icon: Icons.local_fire_department_outlined,
-                        ),
-                        _ReflectionMetric(
-                          width: width,
-                          label: 'Longest Streak',
-                          value: '${data.longestStreak} days',
-                          icon: Icons.timeline_outlined,
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _WeeklyChart(values: data.weeklyTotals),
-                const SizedBox(height: AppSpacing.lg),
+                // Monthly Overview Card
                 AppCard(
+                  color: AppColors.darkCardBg,
+                  borderColor: AppColors.gold,
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Journey Highlights',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        'Monthly Overview',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.goldBright,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        'July 2025',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Total Completed',
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.goldBright),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      formatQuantity(data.total),
+                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        color: AppColors.ivory,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Average / Day',
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  formatQuantity(data.averagePerActiveDay),
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: AppColors.ivory,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      _Highlight(
-                        label: 'Closest Zikr to Completion',
-                        value: data.closestZikr?.name ?? 'Begin an active Zikr',
-                      ),
-                      _Highlight(
-                        label: 'Most Active Zikr',
-                        value: data.mostActiveZikr?.name ?? 'No activity yet',
-                      ),
-                      _Highlight(
-                        label: 'Projected Completion',
-                        value: data.projectedCompletion == null
-                            ? 'More sessions are needed'
-                            : formatDate(data.projectedCompletion!),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Best Day',
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  data.bestDay == null ? '—' : formatDate(data.bestDay!),
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.goldBright,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Completion %',
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${(data.overallCompletion * 100).round()}% (All Zikr)',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AppCard(
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.spa_outlined,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSecondaryContainer,
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      const Expanded(
-                        child: Text(
-                          'Small, consistent acts can shape a lasting journey.',
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: AppSpacing.lg),
+                // Progress Over Time smooth line chart card
+                _ProgressLineChartCard(values: data.weeklyTotals, total: data.total),
+                const SizedBox(height: AppSpacing.lg),
+                // Closest to Completion Section
+                if (activeZikrs.isNotEmpty) ...[
+                  Text(
+                    'Closest to Completion',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.goldBright,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
+                  const SizedBox(height: AppSpacing.sm),
+                  for (final item in activeZikrs.take(2)) ...[
+                    AppCard(
+                      color: AppColors.darkCardBg,
+                      borderColor: AppColors.goldMuted.withValues(alpha: 0.3),
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                        color: AppColors.ivory,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    if (item.arabicName != null)
+                                      Directionality(
+                                        textDirection: TextDirection.rtl,
+                                        child: Text(
+                                          item.arabicName!,
+                                          style: AppTypography.arabicScript(
+                                            color: AppColors.goldBright,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '${formatQuantity(item.remaining)} to go',
+                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${(item.progress * 100).round()}%',
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: Color(item.colorValue),
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: item.progress,
+                              minHeight: 6,
+                              color: Color(item.colorValue),
+                              backgroundColor: Color(item.colorValue).withValues(alpha: 0.15),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
+                  const SizedBox(height: AppSpacing.md),
+                ],
+                // Spiritual Reminder Quranic Calligraphy Card
+                AppCard(
+                  color: AppColors.emerald900,
+                  borderColor: AppColors.gold,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                            Text(
+                              'Spiritual Reminder',
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: AppColors.goldBright,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Directionality(
+                              textDirection: TextDirection.rtl,
+                              child: Text(
+                                'وَاذْكُرْ رَبَّكَ كَثِيرًا',
+                                style: AppTypography.arabicScript(
+                                  color: AppColors.goldGlow,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              '"And remember Allah with much remembrance."',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.ivory.withValues(alpha: 0.9),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            Text(
+                              '(Al-Ahzab 33:41)',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.gold.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
                 ),
-                const SizedBox(height: AppSpacing.xxl),
               ],
             );
           },
@@ -195,64 +362,81 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
   }
 }
 
-class _ReflectionMetric extends StatelessWidget {
-  const _ReflectionMetric({
-    required this.width,
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-  final double width;
-  final String label;
-  final String value;
-  final IconData icon;
+class _ProgressLineChartCard extends StatelessWidget {
+  const _ProgressLineChartCard({required this.values, required this.total});
 
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: width,
-    child: AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: AppSpacing.md),
-          Text(value, style: Theme.of(context).textTheme.titleLarge),
-          Text(label, style: Theme.of(context).textTheme.labelSmall),
-        ],
-      ),
-    ),
-  );
-}
-
-class _WeeklyChart extends StatelessWidget {
-  const _WeeklyChart({required this.values});
   final List<int> values;
+  final int total;
 
   @override
   Widget build(BuildContext context) {
-    final total = values.fold<int>(0, (sum, item) => sum + item);
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Weekly Consistency',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Semantics(
-            image: true,
-            label:
-                'Weekly completed sessions chart. Total ${formatQuantity(total)}. '
-                'Monday through Sunday: ${values.map(formatQuantity).join(', ')}.',
-            child: ExcludeSemantics(
-              child: SizedBox(
-                height: 210,
-                child: BarChart(
-                  BarChartData(
-                    alignment: BarChartAlignment.spaceAround,
-                    gridData: const FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
+    final spots = <FlSpot>[];
+    for (var i = 0; i < values.length; i++) {
+      spots.add(FlSpot(i.toDouble(), values[i].toDouble()));
+    }
+    final maxY = values.isEmpty
+        ? 10.0
+        : (values.reduce((a, b) => a > b ? a : b) * 1.2).clamp(10.0, 100000.0);
+
+    return Semantics(
+      image: true,
+      label:
+          'Weekly completed sessions chart. Total ${formatQuantity(total)}. '
+          'Monday through Sunday: ${values.map(formatQuantity).join(', ')}.',
+      child: AppCard(
+        color: AppColors.darkCardBg,
+        borderColor: AppColors.goldMuted.withValues(alpha: 0.3),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Progress Over Time',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.goldBright,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.emerald850,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.goldMuted.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    'Last 7 Days',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.goldBright,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            SizedBox(
+              height: 180,
+              child: ExcludeSemantics(
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: AppColors.goldMuted.withValues(alpha: 0.12),
+                        strokeWidth: 1,
+                      ),
+                    ),
                     titlesData: FlTitlesData(
                       topTitles: const AxisTitles(),
                       rightTitles: const AxisTitles(),
@@ -260,60 +444,69 @@ class _WeeklyChart extends StatelessWidget {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          getTitlesWidget: (value, meta) => Text(
-                            const ['M', 'T', 'W', 'T', 'F', 'S', 'S'][value
-                                .toInt()
-                                .clamp(0, 6)],
-                          ),
+                          reservedSize: 24,
+                          interval: 1,
+                          getTitlesWidget: (value, meta) {
+                            const labels = ['1 Jul', '8 Jul', '15 Jul', '22 Jul', '29 Jul', '30 Jul', '31 Jul'];
+                            final idx = value.toInt().clamp(0, labels.length - 1);
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                labels[idx],
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                    barGroups: [
-                      for (var index = 0; index < values.length; index++)
-                        BarChartGroupData(
-                          x: index,
-                          barRods: [
-                            BarChartRodData(
-                              toY: values[index].toDouble(),
-                              width: 18,
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(6),
-                              ),
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ],
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: (spots.length - 1).toDouble(),
+                    minY: 0,
+                    maxY: maxY,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        curveSmoothness: 0.35,
+                        color: AppColors.goldBright,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: 4,
+                              color: AppColors.goldBright,
+                              strokeWidth: 2,
+                              strokeColor: AppColors.emerald950,
+                            );
+                          },
                         ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.goldBright.withValues(alpha: 0.32),
+                              AppColors.gold.withValues(alpha: 0.05),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-}
-
-class _Highlight extends StatelessWidget {
-  const _Highlight({required this.label, required this.value});
-  final String label;
-  final String value;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-    child: Row(
-      children: [
-        Expanded(child: Text(label)),
-        const SizedBox(width: AppSpacing.md),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-        ),
-      ],
-    ),
-  );
 }
