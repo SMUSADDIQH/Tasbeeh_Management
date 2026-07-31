@@ -44,6 +44,8 @@ flutter_launcher_icons:
   image_path: assets/branding/tasbeeh_premium_icon.png
   image_path_android: assets/branding/tasbeeh_premium_icon.png
   image_path_ios: assets/branding/tasbeeh_premium_icon.png
+  adaptive_icon_background: "#002B22"
+  adaptive_icon_foreground: assets/branding/tasbeeh_logo_foreground_1024.png
   min_sdk_android: 21
   remove_alpha_ios: true
 

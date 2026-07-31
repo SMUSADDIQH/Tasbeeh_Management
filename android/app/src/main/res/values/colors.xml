@@ -4,4 +4,5 @@
     <color name="brand_primary">#E5B84B</color>
     <color name="brand_secondary">#D49A2D</color>
     <color name="brand_accent">#F3D27A</color>
+	<color name="ic_launcher_background">#002B22</color>
 </resources>
