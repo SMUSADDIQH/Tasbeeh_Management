@@ -27,14 +27,17 @@ class SettingsScreen extends ConsumerWidget {
       children: [
         const _SettingsHeader(),
         Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.md,
+            120,
+          ),
           child: Column(
             children: [
               SettingsSection(
                 title: 'Appearance',
-                children: [
-                  _ThemeTile(settings: settings),
-                ],
+                children: [_ThemeTile(settings: settings)],
               ),
               const SizedBox(height: AppSpacing.lg),
               SettingsSection(
@@ -58,6 +61,17 @@ class SettingsScreen extends ConsumerWidget {
                     onChanged: ref
                         .read(settingsProvider.notifier)
                         .setAnimations,
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.translate_rounded),
+                    title: const Text('Auto-translate Zikr names'),
+                    subtitle: const Text(
+                      'Translate English Zikr names into Arabic while typing.',
+                    ),
+                    value: settings.autoTranslateZikrName,
+                    onChanged: ref
+                        .read(settingsProvider.notifier)
+                        .setAutoTranslateZikrName,
                   ),
                   SwitchListTile(
                     secondary: const Icon(Icons.notifications_none_rounded),
@@ -428,9 +442,7 @@ class _SettingsHeader extends ConsumerWidget {
       ),
       child: Stack(
         children: [
-          const Positioned.fill(
-            child: GreetingHeaderBackgroundWidget(),
-          ),
+          const Positioned.fill(child: GreetingHeaderBackgroundWidget()),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
@@ -442,10 +454,11 @@ class _SettingsHeader extends ConsumerWidget {
                     children: [
                       Text(
                         'Settings',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppColors.goldBright,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: AppColors.goldBright,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(

@@ -53,6 +53,11 @@ void main() {
     await tester.pump();
     expect(find.text('السلام عليكم'), findsOneWidget);
     expect(find.text('Today’s Completed'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Continue Your Journey'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Continue Your Journey'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Recent Activity'),

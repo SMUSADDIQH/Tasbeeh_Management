@@ -24,8 +24,18 @@ abstract final class AppColors {
 
   static const Color darkCardBg = Color(0xFF063A30);
   static const Color lightCardBg = Color(0xFFF9F4E8);
-  static const Color lightCardText = Color(0xFF0A2E25);
-  static const Color lightCardTextMuted = Color(0xFF5A726A);
+  static const Color lightCardText = Color(0xFF003B2F);
+  static const Color lightCardTextMuted = Color(0xFF3F7064);
+
+  // Light Background Color Tokens
+  static const Color darkEmerald = Color(0xFF003B2F);
+  static const Color primaryEmerald = Color(0xFF004D3C);
+  static const Color mutedEmerald = Color(0xFF3F7064);
+
+  // Dark Emerald Background Color Tokens
+  static const Color premiumGold = Color(0xFFE4B54C);
+  static const Color softGold = Color(0xFFF2D07A);
+  static const Color mutedGold = Color(0xFFD2B66F);
 
   static const Color primary = gold;
   static const Color primaryDark = goldBright;

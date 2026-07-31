@@ -5,22 +5,61 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../domain/zikr_models.dart';
+import '../widgets/tasbeeh_counter_widget.dart';
 import '../widgets/zikr_widgets.dart';
 import '../zikr_provider.dart';
 
-class ZikrDetailsScreen extends ConsumerWidget {
+class ZikrDetailsScreen extends ConsumerStatefulWidget {
   const ZikrDetailsScreen({required this.zikrId, super.key});
   final String zikrId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ZikrDetailsScreen> createState() => _ZikrDetailsScreenState();
+}
+
+class _ZikrDetailsScreenState extends ConsumerState<ZikrDetailsScreen> {
+  bool _isDeleting = false;
+
+  Future<void> _confirmAndDelete(String zikrId) async {
+    if (_isDeleting) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete Zikr?',
+      message:
+          'This will permanently delete this Zikr and its related session data. This action cannot be undone.',
+      confirmLabel: 'Delete Permanently',
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      await ref.read(zikrProvider.notifier).deleteZikr(zikrId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Zikr deleted successfully')),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isDeleting = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to delete Zikr: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(zikrProvider);
-    final zikr = state.zikr.where((item) => item.id == zikrId).firstOrNull;
+    final zikr = state.zikr
+        .where((item) => item.id == widget.zikrId)
+        .firstOrNull;
     if (zikr == null) {
       return const Scaffold(body: Center(child: Text('Zikr not found.')));
     }
     final sessions = state.sessions
-        .where((session) => session.zikrId == zikrId)
+        .where((session) => session.zikrId == widget.zikrId)
         .toList();
     final now = DateTime.now();
     final today = sessions
@@ -64,6 +103,7 @@ class ZikrDetailsScreen extends ConsumerWidget {
             ),
           ),
           PopupMenuButton<String>(
+            enabled: !_isDeleting,
             onSelected: (value) async {
               if (value == 'edit') {
                 final draft = await showZikrForm(
@@ -78,6 +118,8 @@ class ZikrDetailsScreen extends ConsumerWidget {
                 await ref
                     .read(zikrProvider.notifier)
                     .setArchived(zikr.id, zikr.status != ZikrStatus.archived);
+              } else if (value == 'delete') {
+                await _confirmAndDelete(zikr.id);
               }
             },
             itemBuilder: (context) => [
@@ -86,6 +128,25 @@ class ZikrDetailsScreen extends ConsumerWidget {
                 value: 'archive',
                 child: Text(
                   zikr.status == ZikrStatus.archived ? 'Restore' : 'Archive',
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_forever_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Delete',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -213,6 +274,8 @@ class ZikrDetailsScreen extends ConsumerWidget {
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.lg),
+          TasbeehCounterWidget(initialZikrId: zikr.id),
           if (zikr.notes != null) ...[
             const SizedBox(height: AppSpacing.lg),
             AppCard(

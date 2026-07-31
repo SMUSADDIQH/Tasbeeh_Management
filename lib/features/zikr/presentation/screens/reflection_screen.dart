@@ -7,12 +7,14 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_segmented_control.dart';
 import '../../domain/zikr_models.dart';
 import '../widgets/zikr_widgets.dart';
 import '../zikr_provider.dart';
 
 class ReflectionScreen extends ConsumerStatefulWidget {
-  const ReflectionScreen({super.key});
+  const ReflectionScreen({super.key, this.scrollController});
+  final ScrollController? scrollController;
 
   @override
   ConsumerState<ReflectionScreen> createState() => _ReflectionScreenState();
@@ -27,8 +29,14 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
     final revision = ref.watch(zikrProvider.select((state) => state.revision));
     final zikr = ref.watch(zikrProvider.select((state) => state.zikr));
     return ListView(
+      controller: widget.scrollController,
       key: const PageStorageKey('reflection-scroll'),
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        120,
+      ),
       children: [
         ScreenHeader(
           title: 'Reflection',
@@ -40,27 +48,17 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SegmentedButton<ReflectionPeriod>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(
-                value: ReflectionPeriod.today,
-                label: Text('Today'),
-              ),
-              ButtonSegment(value: ReflectionPeriod.week, label: Text('Week')),
-              ButtonSegment(
-                value: ReflectionPeriod.month,
-                label: Text('Month'),
-              ),
-              ButtonSegment(value: ReflectionPeriod.year, label: Text('Year')),
-              ButtonSegment(value: ReflectionPeriod.all, label: Text('All')),
-            ],
-            selected: {_period},
-            onSelectionChanged: (value) =>
-                setState(() => _period = value.first),
-          ),
+        AppSegmentedControl<ReflectionPeriod>(
+          isDarkBackground: true,
+          tabs: const [
+            AppSegmentedTab(value: ReflectionPeriod.today, label: 'Today'),
+            AppSegmentedTab(value: ReflectionPeriod.week, label: 'Week'),
+            AppSegmentedTab(value: ReflectionPeriod.month, label: 'Month'),
+            AppSegmentedTab(value: ReflectionPeriod.year, label: 'Year'),
+            AppSegmentedTab(value: ReflectionPeriod.all, label: 'All'),
+          ],
+          selected: _period,
+          onChanged: (value) => setState(() => _period = value),
         ),
         const SizedBox(height: AppSpacing.md),
         DropdownButtonFormField<String?>(
@@ -89,7 +87,9 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
               );
             }
             final data = snapshot.data!;
-            final activeZikrs = zikr.where((z) => z.status == ZikrStatus.active).toList();
+            final activeZikrs = zikr
+                .where((z) => z.status == ZikrStatus.active)
+                .toList();
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,10 +104,11 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                     children: [
                       Text(
                         'Monthly Overview',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.goldBright,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: AppColors.goldBright,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       Text(
                         'July 2025',
@@ -124,21 +125,29 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                               children: [
                                 Text(
                                   'Total Completed',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
                                 ),
                                 const SizedBox(height: 2),
                                 Row(
                                   children: [
-                                    const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.goldBright),
+                                    const Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size: 14,
+                                      color: AppColors.goldBright,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       formatQuantity(data.total),
-                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        color: AppColors.ivory,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            color: AppColors.ivory,
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -151,17 +160,19 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                               children: [
                                 Text(
                                   'Average / Day',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   formatQuantity(data.averagePerActiveDay),
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: AppColors.ivory,
-                                    fontWeight: FontWeight.w800,
-                                  ),
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(
+                                        color: AppColors.ivory,
+                                        fontWeight: FontWeight.w800,
+                                      ),
                                 ),
                               ],
                             ),
@@ -177,17 +188,21 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                               children: [
                                 Text(
                                   'Best Day',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  data.bestDay == null ? '—' : formatDate(data.bestDay!),
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: AppColors.goldBright,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  data.bestDay == null
+                                      ? '—'
+                                      : formatDate(data.bestDay!),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: AppColors.goldBright,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -198,17 +213,19 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                               children: [
                                 Text(
                                   'Completion %',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
+                                  style: Theme.of(context).textTheme.labelSmall
+                                      ?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${(data.overallCompletion * 100).round()}% (All Zikr)',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: AppColors.success,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        color: AppColors.success,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
                               ],
                             ),
@@ -221,7 +238,10 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 const SizedBox(height: AppSpacing.lg),
                 // Progress Over Time smooth line chart card
-                _ProgressLineChartCard(values: data.weeklyTotals, total: data.total),
+                _ProgressLineChartCard(
+                  values: data.weeklyTotals,
+                  total: data.total,
+                ),
                 const SizedBox(height: AppSpacing.lg),
                 // Closest to Completion Section
                 if (activeZikrs.isNotEmpty) ...[
@@ -252,10 +272,13 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                                       item.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        color: AppColors.ivory,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            color: AppColors.ivory,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
                                     if (item.arabicName != null)
                                       Directionality(
@@ -277,16 +300,22 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                                 children: [
                                   Text(
                                     '${formatQuantity(item.remaining)} to go',
-                                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                      color: AppColors.textSecondary,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
                                   ),
                                   Text(
                                     '${(item.progress * 100).round()}%',
-                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      color: Color(item.colorValue),
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          color: Color(item.colorValue),
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -299,7 +328,9 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                               value: item.progress,
                               minHeight: 6,
                               color: Color(item.colorValue),
-                              backgroundColor: Color(item.colorValue).withValues(alpha: 0.15),
+                              backgroundColor: Color(
+                                item.colorValue,
+                              ).withValues(alpha: 0.15),
                             ),
                           ),
                         ],
@@ -317,41 +348,41 @@ class _ReflectionScreenState extends ConsumerState<ReflectionScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                            Text(
-                              'Spiritual Reminder',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: AppColors.goldBright,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Directionality(
-                              textDirection: TextDirection.rtl,
-                              child: Text(
-                                'وَاذْكُرْ رَبَّكَ كَثِيرًا',
-                                style: AppTypography.arabicScript(
-                                  color: AppColors.goldGlow,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              '"And remember Allah with much remembrance."',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.ivory.withValues(alpha: 0.9),
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            Text(
-                              '(Al-Ahzab 33:41)',
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: AppColors.gold.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ],
+                      Text(
+                        'Spiritual Reminder',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.goldBright,
+                          fontWeight: FontWeight.w700,
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Directionality(
+                        textDirection: TextDirection.rtl,
+                        child: Text(
+                          'وَاذْكُرْ رَبَّكَ كَثِيرًا',
+                          style: AppTypography.arabicScript(
+                            color: AppColors.goldGlow,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '"And remember Allah with much remembrance."',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.ivory.withValues(alpha: 0.9),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      Text(
+                        '(Al-Ahzab 33:41)',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.gold.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             );
@@ -404,7 +435,10 @@ class _ProgressLineChartCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.emerald850,
                     borderRadius: BorderRadius.circular(12),
@@ -447,8 +481,19 @@ class _ProgressLineChartCard extends StatelessWidget {
                           reservedSize: 24,
                           interval: 1,
                           getTitlesWidget: (value, meta) {
-                            const labels = ['1 Jul', '8 Jul', '15 Jul', '22 Jul', '29 Jul', '30 Jul', '31 Jul'];
-                            final idx = value.toInt().clamp(0, labels.length - 1);
+                            const labels = [
+                              '1 Jul',
+                              '8 Jul',
+                              '15 Jul',
+                              '22 Jul',
+                              '29 Jul',
+                              '30 Jul',
+                              '31 Jul',
+                            ];
+                            final idx = value.toInt().clamp(
+                              0,
+                              labels.length - 1,
+                            );
                             return Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(

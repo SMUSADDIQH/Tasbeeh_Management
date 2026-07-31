@@ -116,4 +116,43 @@ void main() {
     expect(notifier.state.sessions, hasLength(55));
     expect(notifier.state.hasMore, isFalse);
   });
+
+  test(
+    'deleteZikr removes Zikr, linked sessions, active counter session, and leaves unrelated records untouched',
+    () async {
+      final z1 = await notifier.create(draft());
+      final z2 = await notifier.create(
+        ZikrDraft(
+          name: 'SubhanAllah',
+          target: 100,
+          category: ZikrCategory.daily,
+          startingCompleted: 0,
+          isFavorite: false,
+          colorValue: 0xFF146B55,
+          iconCodePoint: 0,
+          startDate: now,
+        ),
+      );
+
+      await notifier.addSession(z1.id, 100);
+      await notifier.addSession(z2.id, 50);
+      await notifier.startCounterSession(zikrId: z1.id, target: 100);
+
+      expect(notifier.state.activeCounterSession?.zikrId, z1.id);
+      expect(notifier.state.zikr, hasLength(2));
+
+      await notifier.deleteZikr(z1.id);
+
+      expect(notifier.state.zikr.map((item) => item.id), contains(z2.id));
+      expect(
+        notifier.state.zikr.map((item) => item.id),
+        isNot(contains(z1.id)),
+      );
+      expect(
+        notifier.state.sessions.every((item) => item.zikrId == z2.id),
+        isTrue,
+      );
+      expect(notifier.state.activeCounterSession, isNull);
+    },
+  );
 }

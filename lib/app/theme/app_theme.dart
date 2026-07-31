@@ -72,9 +72,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,
-          side: BorderSide(
-            color: AppColors.goldMuted.withValues(alpha: 0.5),
-          ),
+          side: BorderSide(color: AppColors.goldMuted.withValues(alpha: 0.5)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -109,34 +107,37 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.emerald850,
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
-        hintStyle: const TextStyle(color: AppColors.sage),
+        labelStyle: const TextStyle(color: AppColors.premiumGold),
+        hintStyle: const TextStyle(color: AppColors.mutedGold),
         border: const OutlineInputBorder(borderRadius: AppRadius.input),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadius.input,
           borderSide: BorderSide(
-            color: AppColors.goldMuted.withValues(alpha: 0.5),
+            color: AppColors.premiumGold.withValues(alpha: 0.4),
           ),
         ),
         focusedBorder: const OutlineInputBorder(
           borderRadius: AppRadius.input,
-          borderSide: BorderSide(color: AppColors.gold, width: 1.5),
+          borderSide: BorderSide(color: AppColors.premiumGold, width: 1.5),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.emerald900,
         indicatorColor: AppColors.gold.withValues(alpha: 0.18),
-        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
-          color: states.contains(WidgetState.selected)
-              ? AppColors.goldBright
-              : AppColors.sage,
-        )),
-        labelTextStyle: WidgetStateProperty.resolveWith((states) =>
-            textTheme.labelSmall?.copyWith(
-              color: states.contains(WidgetState.selected)
-                  ? AppColors.goldBright
-                  : AppColors.textSecondary,
-            )),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.goldBright
+                : AppColors.sage,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => textTheme.labelSmall?.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? AppColors.goldBright
+                : AppColors.textSecondary,
+          ),
+        ),
         height: 72,
       ),
       navigationRailTheme: NavigationRailThemeData(
@@ -145,7 +146,9 @@ class AppTheme {
         selectedIconTheme: const IconThemeData(color: AppColors.goldBright),
         unselectedIconTheme: const IconThemeData(color: AppColors.sage),
         selectedLabelTextStyle: const TextStyle(color: AppColors.goldBright),
-        unselectedLabelTextStyle: const TextStyle(color: AppColors.textSecondary),
+        unselectedLabelTextStyle: const TextStyle(
+          color: AppColors.textSecondary,
+        ),
       ),
       popupMenuTheme: PopupMenuThemeData(
         color: AppColors.emerald850,
@@ -157,7 +160,9 @@ class AppTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColors.emerald900,
-        titleTextStyle: textTheme.titleLarge?.copyWith(color: AppColors.goldBright),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          color: AppColors.goldBright,
+        ),
         contentTextStyle: textTheme.bodyMedium,
         shape: RoundedRectangleBorder(
           borderRadius: AppRadius.card,

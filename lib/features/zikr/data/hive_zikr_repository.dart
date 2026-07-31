@@ -63,7 +63,126 @@ class HiveZikrRepository implements ZikrRepository {
   Future<void> saveZikr(Zikr zikr) => _zikrBox.put(zikr.id, zikr.toMap());
 
   @override
+  Future<void> clear() async {
+    await _sessionBox.clear();
+    await _zikrBox.clear();
+  }
+
+  static const _activeCounterKey = 'active_counter_session_v1';
+  static const _liveDraftsMapKey = 'live_counter_drafts_v1';
+  static const _selectedLiveZikrKey = 'selected_live_zikr_id_v1';
+
+  @override
+  ActiveCounterSession? loadActiveCounterSession() {
+    final value = _zikrBox.get(_activeCounterKey);
+    if (value is Map<dynamic, dynamic>) {
+      try {
+        return ActiveCounterSession.fromMap(value);
+      } on FormatException {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<void> saveActiveCounterSession(ActiveCounterSession? session) async {
+    if (session == null) {
+      await _zikrBox.delete(_activeCounterKey);
+    } else {
+      await _zikrBox.put(_activeCounterKey, session.toMap());
+      await saveLiveDraft(session);
+    }
+  }
+
+  @override
+  Map<String, ActiveCounterSession> loadAllLiveDrafts() {
+    final drafts = <String, ActiveCounterSession>{};
+    final rawMap = _zikrBox.get(_liveDraftsMapKey);
+    if (rawMap is Map<dynamic, dynamic>) {
+      for (final entry in rawMap.entries) {
+        if (entry.key is String && entry.value is Map<dynamic, dynamic>) {
+          try {
+            final draft = ActiveCounterSession.fromMap(
+              entry.value as Map<dynamic, dynamic>,
+            );
+            if (!draft.isCompleted) {
+              drafts[entry.key as String] = draft;
+            }
+          } on FormatException {
+            continue;
+          }
+        }
+      }
+    }
+
+    // Migration logic for legacy single session
+    final legacy = loadActiveCounterSession();
+    if (legacy != null &&
+        !legacy.isCompleted &&
+        !drafts.containsKey(legacy.zikrId)) {
+      drafts[legacy.zikrId] = legacy;
+      saveLiveDraft(legacy);
+    }
+
+    return drafts;
+  }
+
+  @override
+  ActiveCounterSession? loadLiveDraft(String zikrId) {
+    return loadAllLiveDrafts()[zikrId];
+  }
+
+  @override
+  Future<void> saveLiveDraft(ActiveCounterSession draft) async {
+    final drafts = loadAllLiveDrafts();
+    drafts[draft.zikrId] = draft;
+    final mapToSave = {
+      for (final entry in drafts.entries) entry.key: entry.value.toMap(),
+    };
+    await _zikrBox.put(_liveDraftsMapKey, mapToSave);
+  }
+
+  @override
+  Future<void> clearLiveDraft(String zikrId) async {
+    final drafts = loadAllLiveDrafts();
+    if (drafts.containsKey(zikrId)) {
+      drafts.remove(zikrId);
+      final mapToSave = {
+        for (final entry in drafts.entries) entry.key: entry.value.toMap(),
+      };
+      await _zikrBox.put(_liveDraftsMapKey, mapToSave);
+    }
+    final legacy = loadActiveCounterSession();
+    if (legacy != null && legacy.zikrId == zikrId) {
+      await _zikrBox.delete(_activeCounterKey);
+    }
+  }
+
+  @override
+  Future<void> clearAllLiveDrafts() async {
+    await _zikrBox.delete(_liveDraftsMapKey);
+    await _zikrBox.delete(_activeCounterKey);
+  }
+
+  @override
+  String? loadSelectedLiveZikrId() {
+    final value = _zikrBox.get(_selectedLiveZikrKey);
+    return value is String ? value : null;
+  }
+
+  @override
+  Future<void> saveSelectedLiveZikrId(String? zikrId) async {
+    if (zikrId == null) {
+      await _zikrBox.delete(_selectedLiveZikrKey);
+    } else {
+      await _zikrBox.put(_selectedLiveZikrKey, zikrId);
+    }
+  }
+
+  @override
   Future<void> deleteZikr(String id) async {
+    await clearLiveDraft(id);
     final sessions = await loadAllSessions();
     final batch = <dynamic, dynamic>{
       for (final session in sessions.where((item) => item.zikrId == id))
@@ -94,12 +213,6 @@ class HiveZikrRepository implements ZikrRepository {
       await _sessionBox.put(session.id, session.toMap());
     }
     await verifyIntegrity();
-  }
-
-  @override
-  Future<void> clear() async {
-    await _sessionBox.clear();
-    await _zikrBox.clear();
   }
 
   @override

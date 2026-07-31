@@ -18,4 +18,15 @@ abstract interface class ZikrRepository {
   });
   Future<void> clear();
   Future<void> verifyIntegrity();
+  ActiveCounterSession? loadActiveCounterSession();
+  Future<void> saveActiveCounterSession(ActiveCounterSession? session);
+
+  Map<String, ActiveCounterSession> loadAllLiveDrafts();
+  ActiveCounterSession? loadLiveDraft(String zikrId);
+  Future<void> saveLiveDraft(ActiveCounterSession draft);
+  Future<void> clearLiveDraft(String zikrId);
+  Future<void> clearAllLiveDrafts();
+
+  String? loadSelectedLiveZikrId();
+  Future<void> saveSelectedLiveZikrId(String? zikrId);
 }

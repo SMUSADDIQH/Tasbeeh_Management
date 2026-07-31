@@ -2,10 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 class IslamicPattern extends StatelessWidget {
-  const IslamicPattern({
-    super.key,
-    this.opacity = 0.13,
-  });
+  const IslamicPattern({super.key, this.opacity = 0.13});
 
   final double opacity;
 
@@ -14,7 +11,9 @@ class IslamicPattern extends StatelessWidget {
     return ExcludeSemantics(
       child: IslamicStarPattern(
         backgroundColor: Colors.transparent,
-        lineColor: Theme.of(context).colorScheme.secondary.withValues(alpha: opacity),
+        lineColor: Theme.of(
+          context,
+        ).colorScheme.secondary.withValues(alpha: opacity),
         lineWidth: 1.5,
         tileSize: 84,
       ),
@@ -107,9 +106,15 @@ class IslamicStarPatternPainter extends CustomPainter {
         for (int i = 0; i < 12; i++) {
           final a1 = i * pi / 6;
           final a2 = a1 + pi / 12;
-          final p1 = center + Offset(math.cos(a1) * rStarOuter, math.sin(a1) * rStarOuter);
-          final p2 = center + Offset(math.cos(a2) * rStarInner, math.sin(a2) * rStarInner);
-          i == 0 ? starPath.moveTo(p1.dx, p1.dy) : starPath.lineTo(p1.dx, p1.dy);
+          final p1 =
+              center +
+              Offset(math.cos(a1) * rStarOuter, math.sin(a1) * rStarOuter);
+          final p2 =
+              center +
+              Offset(math.cos(a2) * rStarInner, math.sin(a2) * rStarInner);
+          i == 0
+              ? starPath.moveTo(p1.dx, p1.dy)
+              : starPath.lineTo(p1.dx, p1.dy);
           starPath.lineTo(p2.dx, p2.dy);
         }
         starPath.close();
@@ -121,10 +126,24 @@ class IslamicStarPatternPainter extends CustomPainter {
           final aPrev = a - pi / 12;
           final aNext = a + pi / 12;
 
-          final pTip = center + Offset(math.cos(a) * rStarOuter, math.sin(a) * rStarOuter);
-          final pPetal = center + Offset(math.cos(a) * rPetalOuter, math.sin(a) * rPetalOuter);
-          final pValleyL = center + Offset(math.cos(aPrev) * rStarInner, math.sin(aPrev) * rStarInner);
-          final pValleyR = center + Offset(math.cos(aNext) * rStarInner, math.sin(aNext) * rStarInner);
+          final pTip =
+              center +
+              Offset(math.cos(a) * rStarOuter, math.sin(a) * rStarOuter);
+          final pPetal =
+              center +
+              Offset(math.cos(a) * rPetalOuter, math.sin(a) * rPetalOuter);
+          final pValleyL =
+              center +
+              Offset(
+                math.cos(aPrev) * rStarInner,
+                math.sin(aPrev) * rStarInner,
+              );
+          final pValleyR =
+              center +
+              Offset(
+                math.cos(aNext) * rStarInner,
+                math.sin(aNext) * rStarInner,
+              );
 
           final kitePath = Path()
             ..moveTo(pTip.dx, pTip.dy)
@@ -140,7 +159,8 @@ class IslamicStarPatternPainter extends CustomPainter {
         final hexPath = Path();
         for (int i = 0; i < 6; i++) {
           final a = i * pi / 3 + pi / 6;
-          final pt = center + Offset(math.cos(a) * rOuterHex, math.sin(a) * rOuterHex);
+          final pt =
+              center + Offset(math.cos(a) * rOuterHex, math.sin(a) * rOuterHex);
           i == 0 ? hexPath.moveTo(pt.dx, pt.dy) : hexPath.lineTo(pt.dx, pt.dy);
         }
         hexPath.close();

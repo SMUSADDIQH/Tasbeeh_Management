@@ -20,6 +20,11 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> {
   int _selectedIndex = 0;
 
+  final _homeScrollController = ScrollController();
+  final _zikrScrollController = ScrollController();
+  final _historyScrollController = ScrollController();
+  final _reflectionScrollController = ScrollController();
+
   static const _destinations = [
     NavigationDestination(
       icon: Icon(Icons.home_outlined),
@@ -48,6 +53,36 @@ class _AppShellState extends ConsumerState<AppShell> {
     ),
   ];
 
+  @override
+  void dispose() {
+    _homeScrollController.dispose();
+    _zikrScrollController.dispose();
+    _historyScrollController.dispose();
+    _reflectionScrollController.dispose();
+    super.dispose();
+  }
+
+  void _onDestinationSelected(int index) {
+    if (_selectedIndex == index) {
+      final targetController = switch (index) {
+        0 => _homeScrollController,
+        1 => _zikrScrollController,
+        2 => _historyScrollController,
+        3 => _reflectionScrollController,
+        _ => null,
+      };
+      if (targetController != null && targetController.hasClients) {
+        targetController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    } else {
+      setState(() => _selectedIndex = index);
+    }
+  }
+
   Future<void> _newZikr() async {
     final draft = await showZikrForm(
       context,
@@ -65,10 +100,11 @@ class _AppShellState extends ConsumerState<AppShell> {
       HomeScreen(
         onNewZikr: _newZikr,
         onViewHistory: () => setState(() => _selectedIndex = 2),
+        scrollController: _homeScrollController,
       ),
-      const ZikrScreen(),
-      const HistoryScreen(),
-      const ReflectionScreen(),
+      ZikrScreen(scrollController: _zikrScrollController),
+      HistoryScreen(scrollController: _historyScrollController),
+      ReflectionScreen(scrollController: _reflectionScrollController),
       const SettingsScreen(),
     ];
     return Scaffold(
@@ -79,14 +115,16 @@ class _AppShellState extends ConsumerState<AppShell> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final content = IndexedStack(index: _selectedIndex, children: screens);
+                  final content = IndexedStack(
+                    index: _selectedIndex,
+                    children: screens,
+                  );
                   if (constraints.maxWidth >= 840) {
                     return Row(
                       children: [
                         NavigationRail(
                           selectedIndex: _selectedIndex,
-                          onDestinationSelected: (value) =>
-                              setState(() => _selectedIndex = value),
+                          onDestinationSelected: _onDestinationSelected,
                           extended: constraints.maxWidth >= 1120,
                           labelType: constraints.maxWidth >= 1120
                               ? NavigationRailLabelType.none
@@ -117,8 +155,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                       ),
                       child: NavigationBar(
                         selectedIndex: _selectedIndex,
-                        onDestinationSelected: (value) =>
-                            setState(() => _selectedIndex = value),
+                        onDestinationSelected: _onDestinationSelected,
                         destinations: _destinations,
                       ),
                     ),

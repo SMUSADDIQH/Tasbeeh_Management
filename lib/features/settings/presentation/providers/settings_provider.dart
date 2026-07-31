@@ -53,6 +53,8 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
       _save(state.settings.copyWith(remindersEnabled: value));
   Future<void> setDefaultLabel(String value) =>
       _save(state.settings.copyWith(defaultSessionLabel: value));
+  Future<void> setAutoTranslateZikrName(bool value) =>
+      _save(state.settings.copyWith(autoTranslateZikrName: value));
   Future<bool> setDefaultTarget(String value) async {
     final parsed = int.tryParse(value);
     if (parsed == null || parsed <= 0) return false;

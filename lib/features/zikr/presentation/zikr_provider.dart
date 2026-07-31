@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/backup_service.dart';
 import '../domain/zikr_models.dart';
 import '../domain/zikr_repository.dart';
+import 'zikr_haptics.dart';
 
 final zikrRepositoryProvider = Provider<ZikrRepository>((ref) {
   throw UnimplementedError('Override zikrRepositoryProvider at startup.');
@@ -17,6 +18,7 @@ final zikrProvider = StateNotifierProvider<ZikrNotifier, ZikrState>((ref) {
   return ZikrNotifier(
     ref.watch(zikrRepositoryProvider),
     ref.watch(clockProvider),
+    haptics: ref.watch(zikrHapticsProvider),
   );
 });
 
@@ -24,6 +26,9 @@ class ZikrState {
   const ZikrState({
     this.zikr = const [],
     this.sessions = const [],
+    this.liveDrafts = const {},
+    this.selectedLiveZikrId,
+    this.activeCounterSession,
     this.isLoading = true,
     this.isLoadingMore = false,
     this.hasMore = true,
@@ -37,6 +42,9 @@ class ZikrState {
 
   final List<Zikr> zikr;
   final List<ZikrSession> sessions;
+  final Map<String, ActiveCounterSession> liveDrafts;
+  final String? selectedLiveZikrId;
+  final ActiveCounterSession? activeCounterSession;
   final bool isLoading;
   final bool isLoadingMore;
   final bool hasMore;
@@ -47,9 +55,16 @@ class ZikrState {
   final String? error;
   final int revision;
 
+  ActiveCounterSession? getDraftFor(String zikrId) => liveDrafts[zikrId];
+
   ZikrState copyWith({
     List<Zikr>? zikr,
     List<ZikrSession>? sessions,
+    Map<String, ActiveCounterSession>? liveDrafts,
+    String? selectedLiveZikrId,
+    bool clearSelectedLiveZikrId = false,
+    ActiveCounterSession? activeCounterSession,
+    bool clearActiveCounterSession = false,
     bool? isLoading,
     bool? isLoadingMore,
     bool? hasMore,
@@ -64,6 +79,13 @@ class ZikrState {
   }) => ZikrState(
     zikr: zikr ?? this.zikr,
     sessions: sessions ?? this.sessions,
+    liveDrafts: liveDrafts ?? this.liveDrafts,
+    selectedLiveZikrId: clearSelectedLiveZikrId
+        ? null
+        : selectedLiveZikrId ?? this.selectedLiveZikrId,
+    activeCounterSession: clearActiveCounterSession
+        ? null
+        : activeCounterSession ?? this.activeCounterSession,
     isLoading: isLoading ?? this.isLoading,
     isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     hasMore: hasMore ?? this.hasMore,
@@ -122,13 +144,17 @@ class ZikrState {
 }
 
 class ZikrNotifier extends StateNotifier<ZikrState> {
-  ZikrNotifier(this._repository, this._now) : super(const ZikrState()) {
+  ZikrNotifier(this._repository, this._now, {ZikrHaptics? haptics})
+    : _haptics = haptics ?? const DefaultZikrHaptics(),
+      super(const ZikrState()) {
     unawaited(refresh());
   }
 
   static const pageSize = 40;
   final ZikrRepository _repository;
   final DateTime Function() _now;
+  final ZikrHaptics _haptics;
+  final Set<String> _submittingZikrs = {};
   ReflectionSummary? _reflectionCache;
   String? _reflectionKey;
   bool _saving = false;
@@ -139,9 +165,27 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
       await _repository.verifyIntegrity();
       final zikr = _repository.loadZikr();
       final sessions = await _repository.loadSessions(limit: pageSize);
+      final drafts = _repository.loadAllLiveDrafts();
+
+      final activeZikrs = zikr
+          .where((z) => z.status != ZikrStatus.archived)
+          .toList();
+      var selectedId =
+          _repository.loadSelectedLiveZikrId() ?? state.selectedLiveZikrId;
+      if (selectedId == null || !activeZikrs.any((z) => z.id == selectedId)) {
+        selectedId = activeZikrs.isNotEmpty ? activeZikrs.first.id : null;
+      }
+
+      final activeCounter = selectedId != null ? drafts[selectedId] : null;
+
       state = state.copyWith(
         zikr: zikr,
         sessions: sessions,
+        liveDrafts: drafts,
+        selectedLiveZikrId: selectedId,
+        clearSelectedLiveZikrId: selectedId == null,
+        activeCounterSession: activeCounter,
+        clearActiveCounterSession: activeCounter == null,
         isLoading: false,
         hasMore: sessions.length == pageSize,
         revision: state.revision + 1,
@@ -149,6 +193,277 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
       _invalidateReflection();
     } on Object catch (error) {
       state = state.copyWith(isLoading: false, error: error.toString());
+    }
+  }
+
+  Future<void> selectLiveZikr(String zikrId) async {
+    await _repository.saveSelectedLiveZikrId(zikrId);
+    final draft = state.liveDrafts[zikrId];
+    state = state.copyWith(
+      selectedLiveZikrId: zikrId,
+      activeCounterSession: draft,
+      clearActiveCounterSession: draft == null,
+    );
+  }
+
+  Future<ActiveCounterSession> startCounterSession({
+    required String zikrId,
+    required int target,
+  }) async {
+    if (target <= 0) {
+      throw ArgumentError.value(
+        target,
+        'target',
+        'Target must be greater than zero.',
+      );
+    }
+    final now = _now();
+    final session = ActiveCounterSession(
+      id: '${now.microsecondsSinceEpoch}-${zikrId.hashCode.abs()}',
+      zikrId: zikrId,
+      target: target,
+      count: 0,
+      createdAt: now,
+      updatedAt: now,
+    );
+    await _repository.saveLiveDraft(session);
+    await _repository.saveSelectedLiveZikrId(zikrId);
+
+    final newDrafts = Map<String, ActiveCounterSession>.from(state.liveDrafts)
+      ..[zikrId] = session;
+
+    state = state.copyWith(
+      liveDrafts: newDrafts,
+      selectedLiveZikrId: zikrId,
+      activeCounterSession: session,
+    );
+    return session;
+  }
+
+  Future<void> incrementCounter({String? forZikrId}) async {
+    final targetZikrId =
+        forZikrId ??
+        state.activeCounterSession?.zikrId ??
+        state.selectedLiveZikrId;
+    if (targetZikrId == null) return;
+
+    final active =
+        state.liveDrafts[targetZikrId] ??
+        (targetZikrId == state.selectedLiveZikrId
+            ? state.activeCounterSession
+            : null);
+    if (active == null || active.isCompleted) return;
+
+    final previousCount = active.count;
+    final liveTarget = active.target;
+    final newCount = (previousCount + 1).clamp(0, liveTarget);
+    final isJustCompleted = newCount >= liveTarget;
+    final now = _now();
+
+    final updated = active.copyWith(
+      count: newCount,
+      isCompleted: isJustCompleted,
+      updatedAt: now,
+    );
+
+    await _repository.saveLiveDraft(updated);
+
+    final updatedDrafts = Map<String, ActiveCounterSession>.from(
+      state.liveDrafts,
+    )..[targetZikrId] = updated;
+
+    final isSelected = targetZikrId == state.selectedLiveZikrId;
+    state = state.copyWith(
+      liveDrafts: updatedDrafts,
+      activeCounterSession: isSelected ? updated : state.activeCounterSession,
+    );
+
+    final activeZikr = state.zikr
+        .where((z) => z.id == targetZikrId)
+        .firstOrNull;
+    final vibrationMode =
+        activeZikr?.countVibrationMode ?? CountVibrationMode.off;
+    final interval = activeZikr?.vibrationInterval;
+
+    final trigger = evaluateVibrationTrigger(
+      previousCount: previousCount,
+      newCount: newCount,
+      liveTarget: liveTarget,
+      vibrationMode: vibrationMode,
+      customInterval: interval,
+      lastVibratedMilestone: active.lastVibratedMilestone,
+    );
+
+    if (trigger == VibrationTrigger.completion) {
+      unawaited(_haptics.completionImpact());
+    } else if (trigger == VibrationTrigger.milestone) {
+      unawaited(_haptics.milestoneImpact());
+      final crossed = getCrossedMilestone(
+        previousCount: previousCount,
+        newCount: newCount,
+        vibrationMode: vibrationMode,
+        customInterval: interval,
+      );
+      if (crossed != null) {
+        final draftWithMilestone = updated.copyWith(
+          lastVibratedMilestone: crossed,
+        );
+        await _repository.saveLiveDraft(draftWithMilestone);
+        final drafts = Map<String, ActiveCounterSession>.from(state.liveDrafts)
+          ..[targetZikrId] = draftWithMilestone;
+        state = state.copyWith(
+          liveDrafts: drafts,
+          activeCounterSession: isSelected
+              ? draftWithMilestone
+              : state.activeCounterSession,
+        );
+      }
+    }
+
+    if (isJustCompleted) {
+      await submitLiveSession(targetZikrId, isAutoCompletion: true);
+    }
+  }
+
+  Future<bool> submitLiveSession(
+    String zikrId, {
+    bool isAutoCompletion = false,
+  }) async {
+    if (_submittingZikrs.contains(zikrId)) return false;
+    _submittingZikrs.add(zikrId);
+
+    try {
+      final draft =
+          _repository.loadLiveDraft(zikrId) ?? state.liveDrafts[zikrId];
+      if (draft == null || draft.count <= 0) {
+        return false;
+      }
+
+      final item = state.zikr.where((z) => z.id == zikrId).firstOrNull;
+      if (item == null) return false;
+
+      final sessionAmount = draft.count;
+      final sessionCreatedAt = draft.createdAt;
+
+      // 1. Clear only this Zikr's draft
+      await _repository.clearLiveDraft(zikrId);
+
+      // 2. Add completed session for this exact Zikr
+      await _addSessionInternal(
+        item,
+        sessionAmount,
+        timestamp: sessionCreatedAt,
+        label: isAutoCompletion
+            ? 'Tasbeeh Counter (${draft.target})'
+            : 'Live Session ($sessionAmount)',
+      );
+
+      // 3. Update local state
+      final updatedDrafts = Map<String, ActiveCounterSession>.from(
+        state.liveDrafts,
+      )..remove(zikrId);
+
+      final isSelected = zikrId == state.selectedLiveZikrId;
+      state = state.copyWith(
+        liveDrafts: updatedDrafts,
+        activeCounterSession: isSelected ? null : state.activeCounterSession,
+        clearActiveCounterSession: isSelected,
+      );
+
+      await _reloadAll();
+
+      return true;
+    } finally {
+      _submittingZikrs.remove(zikrId);
+    }
+  }
+
+  Future<void> abandonCounterSession({String? forZikrId}) async {
+    final targetZikrId = forZikrId ?? state.selectedLiveZikrId;
+    if (targetZikrId == null) return;
+
+    await _repository.clearLiveDraft(targetZikrId);
+
+    final updatedDrafts = Map<String, ActiveCounterSession>.from(
+      state.liveDrafts,
+    )..remove(targetZikrId);
+
+    final isSelected = targetZikrId == state.selectedLiveZikrId;
+    state = state.copyWith(
+      liveDrafts: updatedDrafts,
+      activeCounterSession: isSelected ? null : state.activeCounterSession,
+      clearActiveCounterSession: isSelected,
+    );
+  }
+
+  Future<void> resetCounterSession({String? forZikrId}) async {
+    final targetZikrId = forZikrId ?? state.selectedLiveZikrId;
+    if (targetZikrId == null) return;
+    final draft =
+        state.liveDrafts[targetZikrId] ??
+        (targetZikrId == state.selectedLiveZikrId
+            ? state.activeCounterSession
+            : null);
+    if (draft == null) return;
+
+    final now = _now();
+    final updated = draft.copyWith(
+      count: 0,
+      isCompleted: false,
+      lastVibratedMilestone: 0,
+      updatedAt: now,
+    );
+    await _repository.saveLiveDraft(updated);
+
+    final updatedDrafts = Map<String, ActiveCounterSession>.from(
+      state.liveDrafts,
+    )..[targetZikrId] = updated;
+
+    final isSelected = targetZikrId == state.selectedLiveZikrId;
+    state = state.copyWith(
+      liveDrafts: updatedDrafts,
+      activeCounterSession: isSelected ? updated : state.activeCounterSession,
+    );
+  }
+
+  Future<void> setCounterTarget(int target, {String? forZikrId}) async {
+    if (target <= 0) {
+      throw ArgumentError.value(
+        target,
+        'target',
+        'Target must be greater than zero.',
+      );
+    }
+    final targetZikrId = forZikrId ?? state.selectedLiveZikrId;
+    if (targetZikrId == null) return;
+    final draft =
+        state.liveDrafts[targetZikrId] ??
+        (targetZikrId == state.selectedLiveZikrId
+            ? state.activeCounterSession
+            : null);
+    if (draft == null) return;
+
+    final now = _now();
+    final isCompletedNow = draft.count >= target;
+    final updated = draft.copyWith(
+      target: target,
+      isCompleted: isCompletedNow,
+      updatedAt: now,
+    );
+    await _repository.saveLiveDraft(updated);
+
+    final updatedDrafts = Map<String, ActiveCounterSession>.from(
+      state.liveDrafts,
+    )..[targetZikrId] = updated;
+
+    final isSelected = targetZikrId == state.selectedLiveZikrId;
+    state = state.copyWith(
+      liveDrafts: updatedDrafts,
+      activeCounterSession: isSelected ? updated : state.activeCounterSession,
+    );
+
+    if (isCompletedNow) {
+      await submitLiveSession(targetZikrId, isAutoCompletion: true);
     }
   }
 
@@ -190,6 +505,8 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
       targetDate: draft.targetDate,
       completedAt: status == ZikrStatus.completed ? now : null,
       notes: draft.notes,
+      countVibrationMode: draft.countVibrationMode,
+      vibrationInterval: draft.vibrationInterval,
     );
     await _repository.saveZikr(item);
     if (draft.startingCompleted > 0) {
@@ -232,6 +549,9 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
         clearTargetDate: draft.targetDate == null,
         notes: draft.notes,
         clearNotes: draft.notes == null,
+        countVibrationMode: draft.countVibrationMode,
+        vibrationInterval: draft.vibrationInterval,
+        clearVibrationInterval: draft.vibrationInterval == null,
       ),
     );
     await _reloadAll();
@@ -240,7 +560,7 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
   Future<void> addSession(
     String zikrId,
     int amount, {
-    required DateTime timestamp,
+    DateTime? timestamp,
     String? note,
     String? label,
   }) async {
@@ -251,7 +571,7 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
       await _addSessionInternal(
         item,
         amount,
-        timestamp: timestamp,
+        timestamp: timestamp ?? _now(),
         note: note,
         label: label,
       );
@@ -272,7 +592,7 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
     final now = _now();
     final total = item.completed + amount;
     final session = ZikrSession(
-      id: '${now.microsecondsSinceEpoch}-${item.id.hashCode.abs()}',
+      id: '${now.microsecondsSinceEpoch}-${item.id.hashCode.abs()}-${state.sessions.length}',
       zikrId: item.id,
       amount: amount,
       timestamp: timestamp,
@@ -351,8 +671,14 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
   }
 
   Future<void> deleteZikr(String id) async {
-    await _repository.deleteZikr(id);
-    await _reloadAll();
+    if (_saving) return;
+    _saving = true;
+    try {
+      await _repository.deleteZikr(id);
+      await _reloadAll();
+    } finally {
+      _saving = false;
+    }
   }
 
   void setSearch(String value) => state = state.copyWith(search: value);
@@ -506,9 +832,26 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
     final sessions = await _repository.loadSessions(
       limit: max(pageSize, state.sessions.length),
     );
+    final drafts = _repository.loadAllLiveDrafts();
+
+    final activeZikrs = zikr
+        .where((z) => z.status != ZikrStatus.archived)
+        .toList();
+    var selectedId = state.selectedLiveZikrId;
+    if (selectedId == null || !activeZikrs.any((z) => z.id == selectedId)) {
+      selectedId = activeZikrs.isNotEmpty ? activeZikrs.first.id : null;
+    }
+
+    final activeCounter = selectedId != null ? drafts[selectedId] : null;
+
     state = state.copyWith(
       zikr: zikr,
       sessions: sessions,
+      liveDrafts: drafts,
+      selectedLiveZikrId: selectedId,
+      clearSelectedLiveZikrId: selectedId == null,
+      activeCounterSession: activeCounter,
+      clearActiveCounterSession: activeCounter == null,
       revision: state.revision + 1,
       clearError: true,
     );

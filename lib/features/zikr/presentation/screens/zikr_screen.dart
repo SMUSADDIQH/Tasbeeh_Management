@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/app_segmented_control.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../domain/zikr_models.dart';
 import '../widgets/zikr_widgets.dart';
@@ -9,7 +10,8 @@ import '../zikr_provider.dart';
 import 'zikr_details_screen.dart';
 
 class ZikrScreen extends ConsumerWidget {
-  const ZikrScreen({super.key});
+  const ZikrScreen({super.key, this.scrollController});
+  final ScrollController? scrollController;
 
   Future<void> _newZikr(BuildContext context, WidgetRef ref) async {
     final draft = await showZikrForm(
@@ -31,6 +33,7 @@ class ZikrScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: CustomScrollView(
+          controller: scrollController,
           key: const PageStorageKey('zikr-scroll'),
           slivers: [
             SliverPadding(
@@ -53,32 +56,28 @@ class ZikrScreen extends ConsumerWidget {
                     onChanged: ref.read(zikrProvider.notifier).setSearch,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  SegmentedButton<ZikrFilter>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment(
+                  AppSegmentedControl<ZikrFilter>(
+                    isDarkBackground: true,
+                    tabs: [
+                      AppSegmentedTab(
                         value: ZikrFilter.active,
-                        label: Text(
-                          'Active (${state.zikr.where((i) => i.status == ZikrStatus.active).length})',
-                        ),
+                        label:
+                            'Active (${state.zikr.where((i) => i.status == ZikrStatus.active).length})',
                       ),
-                      ButtonSegment(
+                      AppSegmentedTab(
                         value: ZikrFilter.completed,
-                        label: Text(
-                          'Completed (${state.zikr.where((i) => i.status == ZikrStatus.completed).length})',
-                        ),
+                        label:
+                            'Completed (${state.zikr.where((i) => i.status == ZikrStatus.completed).length})',
                       ),
-                      ButtonSegment(
+                      AppSegmentedTab(
                         value: ZikrFilter.archived,
-                        label: Text(
-                          'Archived (${state.zikr.where((i) => i.status == ZikrStatus.archived).length})',
-                        ),
+                        label:
+                            'Archived (${state.zikr.where((i) => i.status == ZikrStatus.archived).length})',
                       ),
                     ],
-                    selected: {state.zikrFilter},
-                    onSelectionChanged: (value) => ref
-                        .read(zikrProvider.notifier)
-                        .setZikrFilter(value.first),
+                    selected: state.zikrFilter,
+                    onChanged: (value) =>
+                        ref.read(zikrProvider.notifier).setZikrFilter(value),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                 ],

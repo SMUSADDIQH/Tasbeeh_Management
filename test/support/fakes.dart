@@ -1,11 +1,118 @@
 import 'package:tasbeeh_tracker/features/settings/domain/models/app_settings.dart';
 import 'package:tasbeeh_tracker/features/settings/domain/repositories/settings_repository.dart';
+import 'package:tasbeeh_tracker/features/zikr/data/arabic_name_translation_service.dart';
+import 'package:tasbeeh_tracker/features/zikr/data/islamic_phrase_resolver.dart';
 import 'package:tasbeeh_tracker/features/zikr/domain/zikr_models.dart';
 import 'package:tasbeeh_tracker/features/zikr/domain/zikr_repository.dart';
+
+class FakeArabicNameTranslationService implements ArabicNameTranslationService {
+  bool isModelPrepared = true;
+  bool shouldFail = false;
+
+  @override
+  bool get isSupportedPlatform => true;
+
+  @override
+  Future<TranslationResult> translate(
+    String text, {
+    void Function(String message)? onProgress,
+  }) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return const TranslationResult.error('Empty text');
+
+    final localMatch = IslamicPhraseResolver.resolve(trimmed);
+    if (localMatch != null) {
+      return TranslationResult.success(localMatch, isLocalMatch: true);
+    }
+
+    if (shouldFail) {
+      return const TranslationResult.error(
+        'Translation unavailable. Enter Arabic manually or retry.',
+      );
+    }
+
+    return TranslationResult.success('ترجمة $trimmed');
+  }
+
+  @override
+  void dispose() {}
+}
 
 class MemoryZikrRepository implements ZikrRepository {
   final Map<String, Zikr> zikr = {};
   final Map<String, ZikrSession> sessions = {};
+  final Map<String, ActiveCounterSession> liveDrafts = {};
+  ActiveCounterSession? activeCounterSession;
+  String? selectedLiveZikrId;
+
+  @override
+  Map<String, ActiveCounterSession> loadAllLiveDrafts() {
+    final drafts = Map<String, ActiveCounterSession>.from(liveDrafts);
+    if (drafts.isEmpty &&
+        activeCounterSession != null &&
+        !activeCounterSession!.isCompleted) {
+      drafts[activeCounterSession!.zikrId] = activeCounterSession!;
+    }
+    return drafts;
+  }
+
+  @override
+  ActiveCounterSession? loadLiveDraft(String zikrId) {
+    return loadAllLiveDrafts()[zikrId];
+  }
+
+  @override
+  Future<void> saveLiveDraft(ActiveCounterSession draft) async {
+    liveDrafts[draft.zikrId] = draft;
+    if (selectedLiveZikrId == draft.zikrId || selectedLiveZikrId == null) {
+      activeCounterSession = draft;
+    }
+  }
+
+  @override
+  Future<void> clearLiveDraft(String zikrId) async {
+    liveDrafts.remove(zikrId);
+    if (activeCounterSession?.zikrId == zikrId) {
+      activeCounterSession = null;
+    }
+  }
+
+  @override
+  Future<void> clearAllLiveDrafts() async {
+    liveDrafts.clear();
+    activeCounterSession = null;
+  }
+
+  @override
+  String? loadSelectedLiveZikrId() => selectedLiveZikrId;
+
+  @override
+  Future<void> saveSelectedLiveZikrId(String? zikrId) async {
+    selectedLiveZikrId = zikrId;
+  }
+
+  @override
+  ActiveCounterSession? loadActiveCounterSession() {
+    if (selectedLiveZikrId != null &&
+        liveDrafts.containsKey(selectedLiveZikrId)) {
+      return liveDrafts[selectedLiveZikrId];
+    }
+    return activeCounterSession;
+  }
+
+  @override
+  Future<void> saveActiveCounterSession(ActiveCounterSession? session) async {
+    if (session == null) {
+      if (selectedLiveZikrId != null) {
+        liveDrafts.remove(selectedLiveZikrId);
+      }
+      activeCounterSession = null;
+    } else {
+      liveDrafts[session.zikrId] = session;
+      activeCounterSession = session;
+      selectedLiveZikrId = session.zikrId;
+    }
+  }
 
   @override
   List<Zikr> loadZikr() =>
@@ -35,6 +142,7 @@ class MemoryZikrRepository implements ZikrRepository {
 
   @override
   Future<void> deleteZikr(String id) async {
+    await clearLiveDraft(id);
     zikr.remove(id);
     sessions.removeWhere((_, value) => value.zikrId == id);
   }
@@ -103,6 +211,8 @@ Zikr sampleZikr({
   int target = 1000,
   int completed = 0,
   ZikrStatus status = ZikrStatus.active,
+  CountVibrationMode countVibrationMode = CountVibrationMode.off,
+  int? vibrationInterval,
 }) {
   final date = DateTime(2026, 7, 30, 8);
   return Zikr(
@@ -119,6 +229,8 @@ Zikr sampleZikr({
     createdAt: date,
     updatedAt: date,
     startDate: date,
+    countVibrationMode: countVibrationMode,
+    vibrationInterval: vibrationInterval,
   );
 }
 

@@ -23,9 +23,7 @@ class MosqueSilhouetteWidget extends StatelessWidget {
         height: height,
         width: double.infinity,
         child: CustomPaint(
-          painter: MosqueDomePainter(
-            color: color.withValues(alpha: opacity),
-          ),
+          painter: MosqueDomePainter(color: color.withValues(alpha: opacity)),
         ),
       ),
     );
@@ -69,47 +67,23 @@ class MosqueDomePainter extends CustomPainter {
     path.moveTo(w * 0.35, h);
     path.lineTo(w * 0.35, h * 0.45);
     // Onion dome curve left to top center
-    path.cubicTo(
-      w * 0.32, h * 0.3,
-      w * 0.42, h * 0.1,
-      w * 0.5, h * 0.02,
-    );
+    path.cubicTo(w * 0.32, h * 0.3, w * 0.42, h * 0.1, w * 0.5, h * 0.02);
     // Onion dome curve right to bottom
-    path.cubicTo(
-      w * 0.58, h * 0.1,
-      w * 0.68, h * 0.3,
-      w * 0.65, h * 0.45,
-    );
+    path.cubicTo(w * 0.58, h * 0.1, w * 0.68, h * 0.3, w * 0.65, h * 0.45);
     path.lineTo(w * 0.65, h);
 
     // Side Dome Left
     path.moveTo(w * 0.2, h);
     path.lineTo(w * 0.2, h * 0.6);
-    path.cubicTo(
-      w * 0.18, h * 0.5,
-      w * 0.24, h * 0.35,
-      w * 0.28, h * 0.3,
-    );
-    path.cubicTo(
-      w * 0.32, h * 0.35,
-      w * 0.38, h * 0.5,
-      w * 0.36, h * 0.6,
-    );
+    path.cubicTo(w * 0.18, h * 0.5, w * 0.24, h * 0.35, w * 0.28, h * 0.3);
+    path.cubicTo(w * 0.32, h * 0.35, w * 0.38, h * 0.5, w * 0.36, h * 0.6);
     path.lineTo(w * 0.36, h);
 
     // Side Dome Right
     path.moveTo(w * 0.64, h);
     path.lineTo(w * 0.64, h * 0.6);
-    path.cubicTo(
-      w * 0.62, h * 0.5,
-      w * 0.68, h * 0.35,
-      w * 0.72, h * 0.3,
-    );
-    path.cubicTo(
-      w * 0.76, h * 0.35,
-      w * 0.82, h * 0.5,
-      w * 0.8, h * 0.6,
-    );
+    path.cubicTo(w * 0.62, h * 0.5, w * 0.68, h * 0.35, w * 0.72, h * 0.3);
+    path.cubicTo(w * 0.76, h * 0.35, w * 0.82, h * 0.5, w * 0.8, h * 0.6);
     path.lineTo(w * 0.8, h);
 
     canvas.drawPath(path, paint);
@@ -145,9 +119,7 @@ class RamadanLanternWidget extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size * 1.5,
-        child: CustomPaint(
-          painter: RamadanLanternPainter(color: color),
-        ),
+        child: CustomPaint(painter: RamadanLanternPainter(color: color)),
       ),
     );
   }
@@ -214,9 +186,21 @@ class RamadanLanternPainter extends CustomPainter {
     canvas.drawPath(bodyPath, linePaint);
 
     // Glass Segment Vertical Lines
-    canvas.drawLine(Offset(w * 0.5, h * 0.3), Offset(w * 0.5, h * 0.78), linePaint);
-    canvas.drawLine(Offset(w * 0.38, h * 0.3), Offset(w * 0.34, h * 0.78), linePaint);
-    canvas.drawLine(Offset(w * 0.62, h * 0.3), Offset(w * 0.66, h * 0.78), linePaint);
+    canvas.drawLine(
+      Offset(w * 0.5, h * 0.3),
+      Offset(w * 0.5, h * 0.78),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(w * 0.38, h * 0.3),
+      Offset(w * 0.34, h * 0.78),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(w * 0.62, h * 0.3),
+      Offset(w * 0.66, h * 0.78),
+      linePaint,
+    );
 
     // Inner Flame
     final flamePaint = Paint()
@@ -255,11 +239,7 @@ class TopArchHeaderBanner extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF021B14),
-              Color(0xFF042E25),
-              Color(0xFF021B14),
-            ],
+            colors: [Color(0xFF021B14), Color(0xFF042E25), Color(0xFF021B14)],
           ),
           border: Border(
             bottom: BorderSide(
@@ -280,7 +260,11 @@ class TopArchHeaderBanner extends StatelessWidget {
                   color: AppColors.goldMuted.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.star_rate_rounded, size: 12, color: AppColors.goldBright),
+                const Icon(
+                  Icons.star_rate_rounded,
+                  size: 12,
+                  color: AppColors.goldBright,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   'ZIKR MANAGEMENT APP',
@@ -293,7 +277,11 @@ class TopArchHeaderBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(Icons.star_rate_rounded, size: 12, color: AppColors.goldBright),
+                const Icon(
+                  Icons.star_rate_rounded,
+                  size: 12,
+                  color: AppColors.goldBright,
+                ),
                 const SizedBox(width: 8),
                 Container(
                   height: 1,
@@ -320,17 +308,13 @@ class TopArchHeaderBanner extends StatelessWidget {
 }
 
 class GreetingHeaderBackgroundWidget extends StatelessWidget {
-  const GreetingHeaderBackgroundWidget({
-    super.key,
-  });
+  const GreetingHeaderBackgroundWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ExcludeSemantics(
       child: SizedBox.expand(
-        child: CustomPaint(
-          painter: GreetingHeaderBackgroundPainter(),
-        ),
+        child: CustomPaint(painter: GreetingHeaderBackgroundPainter()),
       ),
     );
   }
@@ -383,6 +367,6 @@ class GreetingHeaderBackgroundPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant GreetingHeaderBackgroundPainter oldDelegate) => false;
+  bool shouldRepaint(covariant GreetingHeaderBackgroundPainter oldDelegate) =>
+      false;
 }
-

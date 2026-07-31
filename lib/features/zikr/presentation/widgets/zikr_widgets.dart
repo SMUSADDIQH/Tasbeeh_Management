@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -10,6 +11,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../data/arabic_name_translation_service.dart';
 import '../../domain/zikr_models.dart';
 import '../zikr_provider.dart';
 
@@ -140,7 +142,7 @@ class ZikrCard extends StatelessWidget {
                       Text(
                         percentText,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: AppColors.lightCardText,
+                          color: AppColors.darkEmerald,
                           fontWeight: FontWeight.w800,
                           fontSize: 13,
                         ),
@@ -175,7 +177,7 @@ class ZikrCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: AppColors.lightCardText,
+                                color: AppColors.darkEmerald,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -188,7 +190,9 @@ class ZikrCard extends StatelessWidget {
                                 : 'Add to favorites',
                             onPressed: onFavorite,
                             icon: Icon(
-                              zikr.isFavorite ? Icons.star_rounded : Icons.star_outline,
+                              zikr.isFavorite
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline,
                               color: zikr.isFavorite
                                   ? AppColors.goldMuted
                                   : AppColors.lightCardTextMuted,
@@ -211,7 +215,10 @@ class ZikrCard extends StatelessWidget {
                               }
                             },
                             itemBuilder: (context) => [
-                              const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Text('Edit'),
+                              ),
                               PopupMenuItem(
                                 value: 'archive',
                                 child: Text(
@@ -220,7 +227,10 @@ class ZikrCard extends StatelessWidget {
                                       : 'Archive',
                                 ),
                               ),
-                              const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Delete'),
+                              ),
                             ],
                           ),
                         ],
@@ -234,7 +244,7 @@ class ZikrCard extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppTypography.arabicScript(
-                              color: AppColors.lightCardText,
+                              color: AppColors.primaryEmerald,
                               fontSize: 16,
                             ),
                           ),
@@ -247,20 +257,20 @@ class ZikrCard extends StatelessWidget {
                             TextSpan(
                               text: '${formatQuantity(zikr.completed)} ',
                               style: theme.textTheme.titleSmall?.copyWith(
-                                color: AppColors.lightCardText,
+                                color: AppColors.darkEmerald,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
                             TextSpan(
                               text: '/ ${formatQuantity(zikr.target)} ',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.lightCardTextMuted,
+                                color: AppColors.mutedEmerald,
                               ),
                             ),
                             TextSpan(
                               text: 'Completed',
                               style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.lightCardTextMuted,
+                                color: AppColors.mutedEmerald,
                               ),
                             ),
                           ],
@@ -268,7 +278,10 @@ class ZikrCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: identity.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
@@ -292,9 +305,13 @@ class ZikrCard extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.emerald950,
-                    side: BorderSide(color: AppColors.goldMuted.withValues(alpha: 0.6)),
-                    backgroundColor: AppColors.gold.withValues(alpha: 0.15),
+                    foregroundColor: AppColors.darkEmerald,
+                    side: BorderSide(
+                      color: AppColors.goldMuted.withValues(alpha: 0.6),
+                    ),
+                    backgroundColor: AppColors.emerald900.withValues(
+                      alpha: 0.08,
+                    ),
                   ),
                   onPressed: onAddSession,
                   icon: const Icon(Icons.add_rounded, size: 18),
@@ -428,75 +445,426 @@ class EmptyJourney extends StatelessWidget {
   );
 }
 
-
-
 Future<ZikrDraft?> showZikrForm(
   BuildContext context, {
   Zikr? existing,
   required int defaultTarget,
-}) async {
-  final name = TextEditingController(text: existing?.name);
-  final arabic = TextEditingController(text: existing?.arabicName);
-  final description = TextEditingController(text: existing?.description);
-  final target = TextEditingController(
-    text: (existing?.target ?? defaultTarget).toString(),
-  );
-  final starting = TextEditingController(text: '0');
-  final notes = TextEditingController(text: existing?.notes);
-  var category = existing?.category ?? ZikrCategory.custom;
-  var favorite = existing?.isFavorite ?? false;
-  var color = existing?.colorValue ?? zikrColors.first.toARGB32();
-  var icon = existing?.iconCodePoint ?? 0;
-  var startDate = existing?.startDate ?? DateTime.now();
-  var targetDate = existing?.targetDate;
-  final formKey = GlobalKey<FormState>();
-  final result = await showModalBottomSheet<ZikrDraft>(
+}) {
+  return showModalBottomSheet<ZikrDraft>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setModalState) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+    builder: (sheetContext) =>
+        _ZikrFormSheet(existing: existing, defaultTarget: defaultTarget),
+  );
+}
+
+class _ZikrFormSheet extends ConsumerStatefulWidget {
+  const _ZikrFormSheet({this.existing, required this.defaultTarget});
+
+  final Zikr? existing;
+  final int defaultTarget;
+
+  @override
+  ConsumerState<_ZikrFormSheet> createState() => _ZikrFormSheetState();
+}
+
+class _ZikrFormSheetState extends ConsumerState<_ZikrFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
+  final _nameFocusNode = FocusNode();
+  final _targetFocusNode = FocusNode();
+  final _nameKey = GlobalKey();
+  final _targetKey = GlobalKey();
+
+  late final TextEditingController _nameController;
+  late final TextEditingController _arabicController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _targetController;
+  late final TextEditingController _startingController;
+  late final TextEditingController _notesController;
+  late final TextEditingController _vibrationIntervalController;
+
+  late ZikrCategory _category;
+  late bool _favorite;
+  late int _color;
+  late int _icon;
+  late DateTime _startDate;
+  DateTime? _targetDate;
+  late CountVibrationMode _vibrationMode;
+
+  Timer? _debounceTimer;
+  int _translationRequestToken = 0;
+  String? _lastAutoGeneratedArabic;
+  bool _isArabicManuallyEdited = false;
+  bool _isProgrammaticUpdate = false;
+  bool _isTranslating = false;
+  String? _translationStatusMessage;
+  String? _translationError;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _nameController = TextEditingController(text: existing?.name);
+    _arabicController = TextEditingController(text: existing?.arabicName);
+    _descriptionController = TextEditingController(text: existing?.description);
+    _targetController = TextEditingController(
+      text: (existing?.target ?? widget.defaultTarget).toString(),
+    );
+    _startingController = TextEditingController(text: '0');
+    _notesController = TextEditingController(text: existing?.notes);
+    _vibrationIntervalController = TextEditingController(
+      text: existing?.vibrationInterval?.toString() ?? '',
+    );
+
+    _category = existing?.category ?? ZikrCategory.custom;
+    _favorite = existing?.isFavorite ?? false;
+    _color = existing?.colorValue ?? zikrColors.first.toARGB32();
+    _icon = existing?.iconCodePoint ?? 0;
+    _startDate = existing?.startDate ?? DateTime.now();
+    _targetDate = existing?.targetDate;
+    _vibrationMode = existing?.countVibrationMode ?? CountVibrationMode.off;
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _scrollController.dispose();
+    _nameFocusNode.dispose();
+    _targetFocusNode.dispose();
+    _nameController.dispose();
+    _arabicController.dispose();
+    _descriptionController.dispose();
+    _targetController.dispose();
+    _startingController.dispose();
+    _notesController.dispose();
+    _vibrationIntervalController.dispose();
+    super.dispose();
+  }
+
+  void _onNameChanged(String text, bool autoTranslateEnabled) {
+    if (!autoTranslateEnabled) {
+      _debounceTimer?.cancel();
+      if (_isTranslating) {
+        setState(() {
+          _isTranslating = false;
+          _translationStatusMessage = null;
+        });
+      }
+      return;
+    }
+    _debounceTimer?.cancel();
+    if (text.trim().isEmpty) {
+      if (_isTranslating) {
+        setState(() {
+          _isTranslating = false;
+          _translationStatusMessage = null;
+        });
+      }
+      return;
+    }
+
+    _debounceTimer = Timer(const Duration(milliseconds: 600), () {
+      _triggerAutoTranslation(forceReplace: false);
+    });
+  }
+
+  void _onArabicChanged() {
+    if (_isProgrammaticUpdate) return;
+    final text = _arabicController.text;
+    if (text != _lastAutoGeneratedArabic) {
+      _isArabicManuallyEdited = true;
+    }
+  }
+
+  Future<void> _triggerAutoTranslation({bool forceReplace = false}) async {
+    final text = _nameController.text.trim();
+    if (text.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isTranslating = false;
+          _translationStatusMessage = null;
+        });
+      }
+      return;
+    }
+
+    if (!forceReplace) {
+      if (_isArabicManuallyEdited) return;
+      final currentArabic = _arabicController.text.trim();
+      final canAutoUpdate =
+          currentArabic.isEmpty || currentArabic == _lastAutoGeneratedArabic;
+      if (!canAutoUpdate) return;
+    }
+
+    final requestToken = ++_translationRequestToken;
+    final service = ref.read(arabicTranslationServiceProvider);
+
+    if (mounted) {
+      setState(() {
+        _isTranslating = true;
+        _translationStatusMessage = null;
+        _translationError = null;
+      });
+    }
+
+    try {
+      final result = await service.translate(
+        text,
+        onProgress: (message) {
+          if (mounted && requestToken == _translationRequestToken) {
+            setState(() {
+              _translationStatusMessage = message;
+            });
+          }
+        },
+      );
+
+      if (!mounted || requestToken != _translationRequestToken) return;
+
+      if (result.isSuccess && result.arabicText != null) {
+        _isProgrammaticUpdate = true;
+        _arabicController.text = result.arabicText!;
+        _isProgrammaticUpdate = false;
+
+        setState(() {
+          _lastAutoGeneratedArabic = result.arabicText;
+          if (forceReplace) {
+            _isArabicManuallyEdited = false;
+          }
+        });
+      } else {
+        setState(() {
+          _translationError =
+              result.errorMessage ??
+              'Translation unavailable. Enter Arabic manually or retry.';
+        });
+      }
+    } on Object catch (e, st) {
+      debugPrint('Translation error: $e\n$st');
+      if (mounted && requestToken == _translationRequestToken) {
+        setState(() {
+          _translationError =
+              'Translation unavailable. Enter Arabic manually or retry.';
+        });
+      }
+    } finally {
+      if (mounted && requestToken == _translationRequestToken) {
+        setState(() {
+          _isTranslating = false;
+          _translationStatusMessage = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _submit() async {
+    final nameText = _nameController.text.trim();
+    final targetText = _targetController.text.trim();
+    final targetVal = int.tryParse(targetText);
+
+    final isNameValid = nameText.isNotEmpty;
+    final isTargetValid = targetVal != null && targetVal > 0;
+    final isFormValid = _formKey.currentState?.validate() ?? false;
+
+    if (!isNameValid || !isTargetValid || !isFormValid) {
+      FocusNode? focusToRequest;
+      BuildContext? targetContext;
+
+      if (!isNameValid) {
+        focusToRequest = _nameFocusNode;
+        targetContext = _nameKey.currentContext;
+      } else if (!isTargetValid) {
+        focusToRequest = _targetFocusNode;
+        targetContext = _targetKey.currentContext;
+      }
+
+      if (targetContext != null) {
+        Scrollable.ensureVisible(
+          targetContext,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
+      focusToRequest?.requestFocus();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please complete the required fields'),
+          duration: Duration(seconds: 2),
+          backgroundColor: AppColors.emerald900,
         ),
+      );
+      return;
+    }
+
+    final targetValue = targetVal;
+    final startValue = int.tryParse(_startingController.text) ?? 0;
+
+    if (startValue > targetValue) {
+      final proceed = await showConfirmDialog(
+        context,
+        title: 'Starting amount exceeds target',
+        message: 'This Zikr will begin as completed. Continue anyway?',
+        confirmLabel: 'Continue',
+      );
+      if (!proceed || !mounted) return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    final draft = ZikrDraft(
+      name: nameText,
+      arabicName: _arabicController.text.trim().isEmpty
+          ? null
+          : _arabicController.text.trim(),
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+      target: targetValue,
+      startingCompleted: startValue,
+      category: _category,
+      isFavorite: _favorite,
+      colorValue: _color,
+      iconCodePoint: _icon,
+      startDate: _startDate,
+      targetDate: _targetDate,
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+      countVibrationMode: _vibrationMode,
+      vibrationInterval: _vibrationMode == CountVibrationMode.customInterval
+          ? int.tryParse(_vibrationIntervalController.text)
+          : null,
+    );
+
+    Navigator.of(context).pop(draft);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final autoTranslateEnabled = ref
+        .watch(settingsProvider)
+        .settings
+        .autoTranslateZikrName;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+      ),
+      child: KeyedSubtree(
+        key: const ValueKey('new-zikr-form'),
         child: Form(
-          key: formKey,
+          key: _formKey,
           child: ListView(
+            controller: _scrollController,
             shrinkWrap: true,
             children: [
               Text(
-                existing == null ? 'New Zikr' : 'Edit Zikr',
+                widget.existing == null ? 'New Zikr' : 'Edit Zikr',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: AppColors.goldBright,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
-                controller: name,
+                key: _nameKey,
+                focusNode: _nameFocusNode,
+                controller: _nameController,
                 autofocus: true,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) => value == null || value.trim().isEmpty
-                    ? 'Name is required'
-                    : null,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: arabic,
-                textDirection: TextDirection.rtl,
+                style: const TextStyle(color: AppColors.softGold),
                 decoration: const InputDecoration(
-                  labelText: 'Arabic name (optional)',
+                  labelText: 'English Name *',
+                  labelStyle: TextStyle(color: AppColors.premiumGold),
+                  hintStyle: TextStyle(color: AppColors.mutedGold),
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'English name is required';
+                  }
+                  return null;
+                },
+                onChanged: (val) => _onNameChanged(val, autoTranslateEnabled),
               ),
               const SizedBox(height: AppSpacing.md),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _arabicController,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(color: AppColors.softGold),
+                      decoration: InputDecoration(
+                        labelText: 'Arabic name (optional)',
+                        labelStyle: const TextStyle(
+                          color: AppColors.premiumGold,
+                        ),
+                        hintStyle: const TextStyle(color: AppColors.mutedGold),
+                        suffixIcon: _isTranslating
+                            ? const Padding(
+                                padding: EdgeInsets.all(12),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.goldBright,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                      onChanged: (_) => _onArabicChanged(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  TextButton.icon(
+                    onPressed: _isTranslating
+                        ? null
+                        : () => _triggerAutoTranslation(forceReplace: true),
+                    icon: const Icon(Icons.translate, size: 16),
+                    label: const Text('Translate again'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.goldBright,
+                    ),
+                  ),
+                ],
+              ),
+              if (_isTranslating && _translationStatusMessage != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _translationStatusMessage!,
+                  style: const TextStyle(
+                    color: AppColors.mutedGold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+              if (_translationError != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  _translationError!,
+                  style: const TextStyle(
+                    color: AppColors.goldMuted,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: description,
+                controller: _descriptionController,
                 maxLines: 2,
+                style: const TextStyle(color: AppColors.softGold),
                 decoration: const InputDecoration(
                   labelText: 'Description (optional)',
+                  labelStyle: TextStyle(color: AppColors.premiumGold),
+                  hintStyle: TextStyle(color: AppColors.mutedGold),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -504,27 +872,41 @@ Future<ZikrDraft?> showZikrForm(
                 children: [
                   Expanded(
                     child: TextFormField(
-                      controller: target,
+                      key: _targetKey,
+                      focusNode: _targetFocusNode,
+                      controller: _targetController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: const InputDecoration(labelText: 'Target'),
-                      validator: (value) =>
-                          (int.tryParse(value ?? '') ?? 0) <= 0
-                          ? 'Enter a positive target'
-                          : null,
+                      style: const TextStyle(color: AppColors.softGold),
+                      decoration: const InputDecoration(
+                        labelText: 'Target *',
+                        labelStyle: TextStyle(color: AppColors.premiumGold),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Target is required';
+                        }
+                        final parsed = int.tryParse(value.trim());
+                        if (parsed == null || parsed <= 0) {
+                          return 'Enter a valid target greater than zero';
+                        }
+                        return null;
+                      },
                     ),
                   ),
-                  if (existing == null) ...[
+                  if (widget.existing == null) ...[
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: TextFormField(
-                        controller: starting,
+                        controller: _startingController,
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
                         ],
+                        style: const TextStyle(color: AppColors.softGold),
                         decoration: const InputDecoration(
                           labelText: 'Starting completed',
+                          labelStyle: TextStyle(color: AppColors.premiumGold),
                         ),
                       ),
                     ),
@@ -533,63 +915,101 @@ Future<ZikrDraft?> showZikrForm(
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<ZikrCategory>(
-                initialValue: category,
-                decoration: const InputDecoration(labelText: 'Category'),
+                initialValue: _category,
+                dropdownColor: AppColors.emerald850,
+                style: const TextStyle(color: AppColors.softGold),
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  labelStyle: TextStyle(color: AppColors.premiumGold),
+                ),
                 items: [
                   for (final item in ZikrCategory.values)
-                    DropdownMenuItem(value: item, child: Text(item.label)),
+                    DropdownMenuItem(
+                      value: item,
+                      child: Text(
+                        item.label,
+                        style: const TextStyle(color: AppColors.softGold),
+                      ),
+                    ),
                 ],
                 onChanged: (value) =>
-                    setModalState(() => category = value ?? category),
+                    setState(() => _category = value ?? _category),
               ),
               const SizedBox(height: AppSpacing.md),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.play_circle_outline),
-                title: const Text('Start date'),
-                subtitle: Text(formatDate(startDate)),
-                trailing: const Icon(Icons.edit_calendar_outlined),
+                leading: const Icon(
+                  Icons.play_circle_outline,
+                  color: AppColors.premiumGold,
+                ),
+                title: const Text(
+                  'Start date',
+                  style: TextStyle(color: AppColors.softGold),
+                ),
+                subtitle: Text(
+                  formatDate(_startDate),
+                  style: const TextStyle(color: AppColors.mutedGold),
+                ),
+                trailing: const Icon(
+                  Icons.edit_calendar_outlined,
+                  color: AppColors.premiumGold,
+                ),
                 onTap: () async {
                   final selected = await showDatePicker(
                     context: context,
                     firstDate: DateTime(2000),
                     lastDate: DateTime(2100),
-                    initialDate: startDate,
+                    initialDate: _startDate,
                   );
-                  if (selected != null) {
-                    setModalState(() => startDate = selected);
+                  if (selected != null && mounted) {
+                    setState(() => _startDate = selected);
                   }
                 },
               ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event_available_outlined),
-                title: const Text('Target completion date'),
-                subtitle: Text(
-                  targetDate == null ? 'Optional' : formatDate(targetDate!),
+                leading: const Icon(
+                  Icons.event_available_outlined,
+                  color: AppColors.premiumGold,
                 ),
-                trailing: targetDate == null
-                    ? const Icon(Icons.add)
+                title: const Text(
+                  'Target completion date',
+                  style: TextStyle(color: AppColors.softGold),
+                ),
+                subtitle: Text(
+                  _targetDate == null ? 'Optional' : formatDate(_targetDate!),
+                  style: const TextStyle(color: AppColors.mutedGold),
+                ),
+                trailing: _targetDate == null
+                    ? const Icon(Icons.add, color: AppColors.premiumGold)
                     : IconButton(
                         tooltip: 'Clear target completion date',
-                        onPressed: () => setModalState(() => targetDate = null),
-                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() => _targetDate = null),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppColors.premiumGold,
+                        ),
                       ),
                 onTap: () async {
                   final selected = await showDatePicker(
                     context: context,
-                    firstDate: startDate,
+                    firstDate: _startDate,
                     lastDate: DateTime(2200),
                     initialDate:
-                        targetDate ?? startDate.add(const Duration(days: 30)),
+                        _targetDate ?? _startDate.add(const Duration(days: 30)),
                   );
-                  if (selected != null) {
-                    setModalState(() => targetDate = selected);
+                  if (selected != null && mounted) {
+                    setState(() => _targetDate = selected);
                   }
                 },
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text('Color', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Color',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: AppColors.premiumGold),
+              ),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.sm,
@@ -597,14 +1017,13 @@ Future<ZikrDraft?> showZikrForm(
                   for (final item in zikrColors)
                     Semantics(
                       label: 'Choose Zikr color',
-                      selected: color == item.toARGB32(),
+                      selected: _color == item.toARGB32(),
                       child: InkWell(
                         borderRadius: AppRadius.pillBorder,
-                        onTap: () =>
-                            setModalState(() => color = item.toARGB32()),
+                        onTap: () => setState(() => _color = item.toARGB32()),
                         child: CircleAvatar(
                           backgroundColor: item,
-                          child: color == item.toARGB32()
+                          child: _color == item.toARGB32()
                               ? const Icon(Icons.check, color: Colors.white)
                               : null,
                         ),
@@ -613,7 +1032,12 @@ Future<ZikrDraft?> showZikrForm(
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text('Symbol', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Symbol',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: AppColors.premiumGold),
+              ),
               const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.sm,
@@ -621,81 +1045,157 @@ Future<ZikrDraft?> showZikrForm(
                   for (var index = 0; index < zikrIcons.length; index++)
                     IconButton.filledTonal(
                       tooltip: 'Choose Zikr symbol ${index + 1}',
-                      isSelected: icon == index,
-                      onPressed: () => setModalState(() => icon = index),
+                      isSelected: _icon == index,
+                      onPressed: () => setState(() => _icon = index),
                       icon: Icon(zikrIcons[index]),
                     ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
+              Text(
+                'Count Vibration',
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(color: AppColors.premiumGold),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              DropdownButtonFormField<CountVibrationMode>(
+                initialValue: _vibrationMode,
+                dropdownColor: AppColors.emerald850,
+                style: const TextStyle(color: AppColors.softGold),
+                decoration: const InputDecoration(
+                  labelText: 'Vibration Mode',
+                  labelStyle: TextStyle(color: AppColors.premiumGold),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: CountVibrationMode.off,
+                    child: Text(
+                      'Off',
+                      style: TextStyle(color: AppColors.softGold),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: CountVibrationMode.tasbeeh100,
+                    child: Text(
+                      'Tasbeeh 100',
+                      style: TextStyle(color: AppColors.softGold),
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: CountVibrationMode.customInterval,
+                    child: Text(
+                      'Every N Counts',
+                      style: TextStyle(color: AppColors.softGold),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _vibrationMode = value);
+                  }
+                },
+              ),
+              if (_vibrationMode == CountVibrationMode.tasbeeh100) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Vibrates at 33, 66 and 100.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.mutedGold),
+                ),
+              ],
+              if (_vibrationMode == CountVibrationMode.customInterval) ...[
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: _vibrationIntervalController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: const TextStyle(color: AppColors.softGold),
+                  decoration: const InputDecoration(
+                    labelText: 'Vibration Interval',
+                    labelStyle: TextStyle(color: AppColors.premiumGold),
+                    hintText: 'e.g. 10 or 33',
+                    hintStyle: TextStyle(color: AppColors.mutedGold),
+                  ),
+                  validator: (value) {
+                    if (_vibrationMode != CountVibrationMode.customInterval) {
+                      return null;
+                    }
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Interval is required';
+                    }
+                    final parsed = int.tryParse(value);
+                    if (parsed == null || parsed <= 0) {
+                      return 'Enter an interval greater than 0';
+                    }
+                    final targetVal =
+                        int.tryParse(_targetController.text) ?? 1000000;
+                    if (parsed > targetVal) {
+                      return 'Interval cannot exceed main target';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Vibrates every N completed live counts.',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: AppColors.mutedGold),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: notes,
+                controller: _notesController,
                 maxLines: 2,
+                style: const TextStyle(color: AppColors.softGold),
                 decoration: const InputDecoration(
                   labelText: 'Notes (optional)',
+                  labelStyle: TextStyle(color: AppColors.premiumGold),
+                  hintStyle: TextStyle(color: AppColors.mutedGold),
                 ),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Favorite'),
-                value: favorite,
-                onChanged: (value) => setModalState(() => favorite = value),
+                title: const Text(
+                  'Favorite',
+                  style: TextStyle(color: AppColors.softGold),
+                ),
+                value: _favorite,
+                onChanged: (value) => setState(() => _favorite = value),
               ),
               const SizedBox(height: AppSpacing.md),
               FilledButton(
-                onPressed: () async {
-                  if (!formKey.currentState!.validate()) return;
-                  final targetValue = int.parse(target.text);
-                  final startValue = int.tryParse(starting.text) ?? 0;
-                  if (startValue > targetValue) {
-                    final proceed = await showConfirmDialog(
-                      context,
-                      title: 'Starting amount exceeds target',
-                      message:
-                          'This Zikr will begin as completed. Continue anyway?',
-                      confirmLabel: 'Continue',
-                    );
-                    if (!proceed || !context.mounted) return;
-                  }
-                  Navigator.pop(
-                    context,
-                    ZikrDraft(
-                      name: name.text,
-                      arabicName: arabic.text.trim().isEmpty
-                          ? null
-                          : arabic.text.trim(),
-                      description: description.text.trim().isEmpty
-                          ? null
-                          : description.text.trim(),
-                      target: targetValue,
-                      startingCompleted: startValue,
-                      category: category,
-                      isFavorite: favorite,
-                      colorValue: color,
-                      iconCodePoint: icon,
-                      startDate: startDate,
-                      targetDate: targetDate,
-                      notes: notes.text.trim().isEmpty
-                          ? null
-                          : notes.text.trim(),
-                    ),
-                  );
-                },
-                child: Text(existing == null ? 'Create Zikr' : 'Save Changes'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.premiumGold,
+                  foregroundColor: AppColors.emerald950,
+                ),
+                onPressed: _submit,
+                child: Text(
+                  widget.existing == null ? 'Create Zikr' : 'Save Changes',
+                ),
               ),
             ],
           ),
         ),
       ),
-    ),
-  );
-  name.dispose();
-  arabic.dispose();
-  description.dispose();
-  target.dispose();
-  starting.dispose();
-  notes.dispose();
-  return result;
+    );
+  }
+}
+
+class _SessionDraft {
+  const _SessionDraft({
+    required this.amount,
+    required this.timestamp,
+    this.label,
+    this.note,
+  });
+
+  final int amount;
+  final DateTime timestamp;
+  final String? label;
+  final String? note;
 }
 
 Future<void> showSessionForm(
@@ -704,44 +1204,164 @@ Future<void> showSessionForm(
   Zikr zikr, {
   ZikrSession? existing,
 }) async {
-  final amount = TextEditingController(text: existing?.amount.toString());
-  final note = TextEditingController(text: existing?.note);
-  final settings = ref.read(settingsProvider).settings;
-  var label = existing?.label ?? settings.defaultSessionLabel;
-  var timestamp = existing?.timestamp ?? DateTime.now();
-  var submitted = false;
-  await showModalBottomSheet<void>(
+  final defaultLabel = ref.read(settingsProvider).settings.defaultSessionLabel;
+  final draft = await showModalBottomSheet<_SessionDraft>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setModalState) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.lg,
-          AppSpacing.lg,
-          MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
-        ),
+    builder: (sheetContext) => _SessionFormSheet(
+      zikr: zikr,
+      existing: existing,
+      defaultLabel: defaultLabel,
+    ),
+  );
+
+  if (draft != null && context.mounted) {
+    if (existing == null) {
+      await ref
+          .read(zikrProvider.notifier)
+          .addSession(
+            zikr.id,
+            draft.amount,
+            timestamp: draft.timestamp,
+            label: draft.label,
+            note: draft.note,
+          );
+    } else {
+      await ref
+          .read(zikrProvider.notifier)
+          .editSession(
+            existing,
+            amount: draft.amount,
+            timestamp: draft.timestamp,
+            label: draft.label,
+            note: draft.note,
+          );
+    }
+  }
+}
+
+class _SessionFormSheet extends StatefulWidget {
+  const _SessionFormSheet({
+    required this.zikr,
+    this.existing,
+    required this.defaultLabel,
+  });
+
+  final Zikr zikr;
+  final ZikrSession? existing;
+  final String defaultLabel;
+
+  @override
+  State<_SessionFormSheet> createState() => _SessionFormSheetState();
+}
+
+class _SessionFormSheetState extends State<_SessionFormSheet> {
+  late final TextEditingController _amountController;
+  late final TextEditingController _noteController;
+
+  late String _label;
+  late DateTime _timestamp;
+  bool _submitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    _amountController = TextEditingController(
+      text: existing?.amount.toString(),
+    );
+    _noteController = TextEditingController(text: existing?.note);
+    _label = existing?.label ?? widget.defaultLabel;
+    _timestamp = existing?.timestamp ?? DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_submitted) return;
+    final value = int.tryParse(_amountController.text);
+    if (value == null || value <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Enter a positive amount.')));
+      return;
+    }
+    if (value >= 1000000 ||
+        widget.zikr.completed + value > widget.zikr.target) {
+      final proceed = await showConfirmDialog(
+        context,
+        title: value >= 1000000
+            ? 'Unusually large session'
+            : 'This exceeds the target',
+        message: 'Review the amount before saving.',
+        confirmLabel: 'Save Session',
+      );
+      if (!proceed || !mounted) return;
+    }
+    _submitted = true;
+    FocusScope.of(context).unfocus();
+
+    Navigator.of(context).pop(
+      _SessionDraft(
+        amount: value,
+        timestamp: _timestamp,
+        label: _label,
+        note: _noteController.text.trim().isEmpty
+            ? null
+            : _noteController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+      ),
+      child: KeyedSubtree(
+        key: const ValueKey('add-session-form'),
         child: ListView(
           shrinkWrap: true,
           children: [
             Text(
-              existing == null ? 'Add Session' : 'Edit Session',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.goldBright,
-                ),
+              widget.existing == null ? 'Add Session' : 'Edit Session',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(color: AppColors.goldBright),
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(zikr.name),
+            Text(
+              widget.zikr.name,
+              style: const TextStyle(
+                color: AppColors.softGold,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             TextField(
-              controller: amount,
+              controller: _amountController,
               autofocus: true,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: const TextStyle(color: AppColors.softGold),
               decoration: const InputDecoration(
                 labelText: 'Completed amount',
-                prefixIcon: Icon(Icons.add_task_rounded),
+                labelStyle: TextStyle(color: AppColors.premiumGold),
+                hintStyle: TextStyle(color: AppColors.mutedGold),
+                prefixIcon: Icon(
+                  Icons.add_task_rounded,
+                  color: AppColors.premiumGold,
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -750,15 +1370,28 @@ Future<void> showSessionForm(
               children: [
                 for (final suggestion in [33, 100, 313, 500, 1000])
                   ActionChip(
-                    label: Text(formatQuantity(suggestion)),
-                    onPressed: () => amount.text = suggestion.toString(),
+                    label: Text(
+                      formatQuantity(suggestion),
+                      style: const TextStyle(color: AppColors.softGold),
+                    ),
+                    backgroundColor: AppColors.emerald850,
+                    side: BorderSide(
+                      color: AppColors.premiumGold.withValues(alpha: 0.4),
+                    ),
+                    onPressed: () =>
+                        _amountController.text = suggestion.toString(),
                   ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<String>(
-              initialValue: label,
-              decoration: const InputDecoration(labelText: 'Session label'),
+              initialValue: _label,
+              dropdownColor: AppColors.emerald850,
+              style: const TextStyle(color: AppColors.softGold),
+              decoration: const InputDecoration(
+                labelText: 'Session label',
+                labelStyle: TextStyle(color: AppColors.premiumGold),
+              ),
               items:
                   const [
                         'Morning',
@@ -769,38 +1402,53 @@ Future<void> showSessionForm(
                         'Custom',
                       ]
                       .map(
-                        (item) =>
-                            DropdownMenuItem(value: item, child: Text(item)),
+                        (item) => DropdownMenuItem(
+                          value: item,
+                          child: Text(
+                            item,
+                            style: const TextStyle(color: AppColors.softGold),
+                          ),
+                        ),
                       )
                       .toList(),
               onChanged: (value) {
-                if (value != null) setModalState(() => label = value);
+                if (value != null) setState(() => _label = value);
               },
             ),
             const SizedBox(height: AppSpacing.md),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event_outlined),
-              title: const Text('Session date and time'),
-              subtitle: Text(
-                '${formatDate(timestamp)} · ${formatTime(timestamp)}',
+              leading: const Icon(
+                Icons.event_outlined,
+                color: AppColors.premiumGold,
               ),
-              trailing: const Icon(Icons.edit_calendar_outlined),
+              title: const Text(
+                'Session date and time',
+                style: TextStyle(color: AppColors.softGold),
+              ),
+              subtitle: Text(
+                '${formatDate(_timestamp)} · ${formatTime(_timestamp)}',
+                style: const TextStyle(color: AppColors.mutedGold),
+              ),
+              trailing: const Icon(
+                Icons.edit_calendar_outlined,
+                color: AppColors.premiumGold,
+              ),
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
                   firstDate: DateTime(2000),
                   lastDate: DateTime.now().add(const Duration(days: 1)),
-                  initialDate: timestamp,
+                  initialDate: _timestamp,
                 );
                 if (date == null || !context.mounted) return;
                 final time = await showTimePicker(
                   context: context,
-                  initialTime: TimeOfDay.fromDateTime(timestamp),
+                  initialTime: TimeOfDay.fromDateTime(_timestamp),
                 );
-                if (time == null) return;
-                setModalState(
-                  () => timestamp = DateTime(
+                if (time == null || !context.mounted) return;
+                setState(
+                  () => _timestamp = DateTime(
                     date.year,
                     date.month,
                     date.day,
@@ -810,69 +1458,34 @@ Future<void> showSessionForm(
                 );
               },
             ),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
-              controller: note,
+              controller: _noteController,
               maxLines: 2,
+              style: const TextStyle(color: AppColors.softGold),
               decoration: const InputDecoration(
                 labelText: 'Note (optional)',
+                labelStyle: TextStyle(color: AppColors.premiumGold),
+                hintStyle: TextStyle(color: AppColors.mutedGold),
                 hintText: 'For example, after Fajr',
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
             FilledButton(
-              onPressed: () async {
-                if (submitted) return;
-                final value = int.tryParse(amount.text);
-                if (value == null || value <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Enter a positive amount.')),
-                  );
-                  return;
-                }
-                if (value >= 1000000 || zikr.completed + value > zikr.target) {
-                  final proceed = await showConfirmDialog(
-                    context,
-                    title: value >= 1000000
-                        ? 'Unusually large session'
-                        : 'This exceeds the target',
-                    message: 'Review the amount before saving.',
-                    confirmLabel: 'Save Session',
-                  );
-                  if (!proceed || !context.mounted) return;
-                }
-                submitted = true;
-                if (existing == null) {
-                  await ref
-                      .read(zikrProvider.notifier)
-                      .addSession(
-                        zikr.id,
-                        value,
-                        timestamp: timestamp,
-                        note: note.text,
-                        label: label,
-                      );
-                } else {
-                  await ref
-                      .read(zikrProvider.notifier)
-                      .editSession(
-                        existing,
-                        amount: value,
-                        timestamp: timestamp,
-                        note: note.text,
-                        label: label,
-                      );
-                }
-                if (context.mounted) Navigator.pop(context);
-              },
-              child: const Text('Save Session'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.premiumGold,
+                foregroundColor: AppColors.emerald950,
+              ),
+              onPressed: _submit,
+              child: Text(
+                widget.existing == null ? 'Save Session' : 'Update Session',
+              ),
             ),
           ],
         ),
       ),
-    ),
-  );
-  amount.dispose();
-  note.dispose();
+    );
+  }
 }
 
 Future<bool> showConfirmDialog(
@@ -884,21 +1497,23 @@ Future<bool> showConfirmDialog(
 }) async {
   return await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text(title),
           content: Text(message),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context, false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Cancel'),
             ),
             FilledButton(
               style: destructive
                   ? FilledButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.error,
+                      backgroundColor: Theme.of(
+                        dialogContext,
+                      ).colorScheme.error,
                     )
                   : null,
-              onPressed: () => Navigator.pop(context, true),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text(confirmLabel),
             ),
           ],

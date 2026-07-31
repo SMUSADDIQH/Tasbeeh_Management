@@ -8,6 +8,7 @@ class AppSettings {
     required this.animationsEnabled,
     required this.remindersEnabled,
     required this.defaultSessionLabel,
+    this.autoTranslateZikrName = false,
   });
 
   factory AppSettings.defaults() => const AppSettings(
@@ -17,6 +18,7 @@ class AppSettings {
     animationsEnabled: true,
     remindersEnabled: false,
     defaultSessionLabel: 'After Fajr',
+    autoTranslateZikrName: false,
   );
 
   factory AppSettings.fromMap(Map<dynamic, dynamic> map) => AppSettings(
@@ -32,6 +34,7 @@ class AppSettings {
     animationsEnabled: map['animationsEnabled'] as bool? ?? true,
     remindersEnabled: map['remindersEnabled'] as bool? ?? false,
     defaultSessionLabel: map['defaultSessionLabel'] as String? ?? 'After Fajr',
+    autoTranslateZikrName: map['autoTranslateZikrName'] as bool? ?? false,
   );
 
   final AppThemePreference theme;
@@ -40,6 +43,7 @@ class AppSettings {
   final bool animationsEnabled;
   final bool remindersEnabled;
   final String defaultSessionLabel;
+  final bool autoTranslateZikrName;
 
   AppSettings copyWith({
     AppThemePreference? theme,
@@ -48,6 +52,7 @@ class AppSettings {
     bool? animationsEnabled,
     bool? remindersEnabled,
     String? defaultSessionLabel,
+    bool? autoTranslateZikrName,
   }) => AppSettings(
     theme: theme ?? this.theme,
     defaultTarget: defaultTarget ?? this.defaultTarget,
@@ -55,6 +60,7 @@ class AppSettings {
     animationsEnabled: animationsEnabled ?? this.animationsEnabled,
     remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     defaultSessionLabel: defaultSessionLabel ?? this.defaultSessionLabel,
+    autoTranslateZikrName: autoTranslateZikrName ?? this.autoTranslateZikrName,
   );
 
   Map<String, Object> toMap() => {
@@ -64,5 +70,6 @@ class AppSettings {
     'animationsEnabled': animationsEnabled,
     'remindersEnabled': remindersEnabled,
     'defaultSessionLabel': defaultSessionLabel,
+    'autoTranslateZikrName': autoTranslateZikrName,
   };
 }

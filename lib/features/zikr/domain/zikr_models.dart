@@ -20,6 +20,89 @@ extension ZikrCategoryLabel on ZikrCategory {
   };
 }
 
+enum CountVibrationMode { off, tasbeeh100, customInterval }
+
+enum VibrationTrigger { none, milestone, completion }
+
+VibrationTrigger evaluateVibrationTrigger({
+  required int previousCount,
+  required int newCount,
+  required int liveTarget,
+  required CountVibrationMode vibrationMode,
+  required int? customInterval,
+  int lastVibratedMilestone = 0,
+}) {
+  if (newCount >= liveTarget && previousCount < liveTarget) {
+    return VibrationTrigger.completion;
+  }
+
+  if (vibrationMode == CountVibrationMode.off || newCount <= previousCount) {
+    return VibrationTrigger.none;
+  }
+
+  if (vibrationMode == CountVibrationMode.tasbeeh100) {
+    final startCycle = previousCount ~/ 100;
+    final endCycle = newCount ~/ 100;
+    for (var c = startCycle; c <= endCycle; c++) {
+      for (final offset in const [33, 66, 100]) {
+        final m = c * 100 + offset;
+        if (previousCount < m && newCount >= m && m > lastVibratedMilestone) {
+          return VibrationTrigger.milestone;
+        }
+      }
+    }
+    return VibrationTrigger.none;
+  }
+
+  if (vibrationMode == CountVibrationMode.customInterval &&
+      customInterval != null &&
+      customInterval > 0) {
+    final prevQuotient = previousCount ~/ customInterval;
+    final newQuotient = newCount ~/ customInterval;
+    if (newQuotient > prevQuotient) {
+      final milestone = newQuotient * customInterval;
+      if (milestone > lastVibratedMilestone &&
+          previousCount < milestone &&
+          newCount >= milestone) {
+        return VibrationTrigger.milestone;
+      }
+    }
+  }
+
+  return VibrationTrigger.none;
+}
+
+int? getCrossedMilestone({
+  required int previousCount,
+  required int newCount,
+  required CountVibrationMode vibrationMode,
+  required int? customInterval,
+}) {
+  if (newCount <= previousCount) return null;
+
+  if (vibrationMode == CountVibrationMode.tasbeeh100) {
+    final startCycle = previousCount ~/ 100;
+    final endCycle = newCount ~/ 100;
+    for (var c = endCycle; c >= startCycle; c--) {
+      for (final offset in const [100, 66, 33]) {
+        final m = c * 100 + offset;
+        if (previousCount < m && newCount >= m) {
+          return m;
+        }
+      }
+    }
+  } else if (vibrationMode == CountVibrationMode.customInterval &&
+      customInterval != null &&
+      customInterval > 0) {
+    final prevQuotient = previousCount ~/ customInterval;
+    final newQuotient = newCount ~/ customInterval;
+    if (newQuotient > prevQuotient) {
+      return newQuotient * customInterval;
+    }
+  }
+  return null;
+}
+
 class Zikr {
   const Zikr({
     required this.id,
@@ -40,6 +123,8 @@ class Zikr {
     this.completedAt,
     this.archivedAt,
     this.notes,
+    this.countVibrationMode = CountVibrationMode.off,
+    this.vibrationInterval,
     this.schemaVersion = 2,
   });
 
@@ -73,6 +158,12 @@ class Zikr {
       completedAt: _optionalDate(map['completedAt']),
       archivedAt: _optionalDate(map['archivedAt']),
       notes: _optionalString(map['notes']),
+      countVibrationMode: _enumByName(
+        CountVibrationMode.values,
+        map['countVibrationMode'],
+        CountVibrationMode.off,
+      ),
+      vibrationInterval: _optionalPositiveInt(map['vibrationInterval']),
       schemaVersion: map['schemaVersion'] as int? ?? 2,
     );
   }
@@ -95,6 +186,8 @@ class Zikr {
   final DateTime? completedAt;
   final DateTime? archivedAt;
   final String? notes;
+  final CountVibrationMode countVibrationMode;
+  final int? vibrationInterval;
   final int schemaVersion;
 
   int get remaining => (target - completed).clamp(0, target);
@@ -117,12 +210,15 @@ class Zikr {
     DateTime? completedAt,
     DateTime? archivedAt,
     String? notes,
+    CountVibrationMode? countVibrationMode,
+    int? vibrationInterval,
     bool clearTargetDate = false,
     bool clearArchivedAt = false,
     bool clearCompletedAt = false,
     bool clearArabicName = false,
     bool clearDescription = false,
     bool clearNotes = false,
+    bool clearVibrationInterval = false,
   }) {
     return Zikr(
       id: id,
@@ -143,6 +239,10 @@ class Zikr {
       completedAt: clearCompletedAt ? null : completedAt ?? this.completedAt,
       archivedAt: clearArchivedAt ? null : archivedAt ?? this.archivedAt,
       notes: clearNotes ? null : notes ?? this.notes,
+      countVibrationMode: countVibrationMode ?? this.countVibrationMode,
+      vibrationInterval: clearVibrationInterval
+          ? null
+          : vibrationInterval ?? this.vibrationInterval,
       schemaVersion: schemaVersion,
     );
   }
@@ -166,6 +266,8 @@ class Zikr {
     'completedAt': completedAt?.toIso8601String(),
     'archivedAt': archivedAt?.toIso8601String(),
     'notes': notes,
+    'countVibrationMode': countVibrationMode.name,
+    'vibrationInterval': vibrationInterval,
     'schemaVersion': schemaVersion,
   };
 }
@@ -259,6 +361,8 @@ class ZikrDraft {
     this.description,
     this.targetDate,
     this.notes,
+    this.countVibrationMode = CountVibrationMode.off,
+    this.vibrationInterval,
   });
 
   final String name;
@@ -273,6 +377,8 @@ class ZikrDraft {
   final DateTime startDate;
   final DateTime? targetDate;
   final String? notes;
+  final CountVibrationMode countVibrationMode;
+  final int? vibrationInterval;
 }
 
 class ReflectionSummary {
@@ -301,6 +407,91 @@ class ReflectionSummary {
   final Zikr? closestZikr;
   final Zikr? mostActiveZikr;
   final DateTime? projectedCompletion;
+
+  Map<String, Object?> toMap() => {
+    'total': total,
+    'averagePerActiveDay': averagePerActiveDay,
+    'bestDayTotal': bestDayTotal,
+    'bestDay': bestDay?.toIso8601String(),
+    'currentStreak': currentStreak,
+    'longestStreak': longestStreak,
+    'overallCompletion': overallCompletion,
+    'weeklyTotals': weeklyTotals,
+    'closestZikr': closestZikr?.toMap(),
+    'mostActiveZikr': mostActiveZikr?.toMap(),
+    'projectedCompletion': projectedCompletion?.toIso8601String(),
+  };
+}
+
+class ActiveCounterSession {
+  const ActiveCounterSession({
+    required this.id,
+    required this.zikrId,
+    required this.target,
+    required this.count,
+    required this.createdAt,
+    required this.updatedAt,
+    this.isCompleted = false,
+    this.lastVibratedMilestone = 0,
+  });
+
+  factory ActiveCounterSession.fromMap(Map<dynamic, dynamic> map) {
+    final target = _requiredPositiveInt(map['target'], 'target');
+    final count = _requiredNonNegativeInt(map['count'], 'count');
+    return ActiveCounterSession(
+      id: _requiredString(map['id'], 'id'),
+      zikrId: _requiredString(map['zikrId'], 'zikrId'),
+      target: target,
+      count: count,
+      createdAt: _requiredDate(map['createdAt'], 'createdAt'),
+      updatedAt: _requiredDate(map['updatedAt'], 'updatedAt'),
+      isCompleted: map['isCompleted'] as bool? ?? false,
+      lastVibratedMilestone: map['lastVibratedMilestone'] as int? ?? 0,
+    );
+  }
+
+  final String id;
+  final String zikrId;
+  final int target;
+  final int count;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isCompleted;
+  final int lastVibratedMilestone;
+
+  int get remaining => (target - count).clamp(0, target);
+  double get progress => target == 0 ? 0 : (count / target).clamp(0, 1.0);
+
+  ActiveCounterSession copyWith({
+    int? count,
+    int? target,
+    DateTime? updatedAt,
+    bool? isCompleted,
+    int? lastVibratedMilestone,
+  }) {
+    return ActiveCounterSession(
+      id: id,
+      zikrId: zikrId,
+      target: target ?? this.target,
+      count: count ?? this.count,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isCompleted: isCompleted ?? this.isCompleted,
+      lastVibratedMilestone:
+          lastVibratedMilestone ?? this.lastVibratedMilestone,
+    );
+  }
+
+  Map<String, Object?> toMap() => {
+    'id': id,
+    'zikrId': zikrId,
+    'target': target,
+    'count': count,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'isCompleted': isCompleted,
+    'lastVibratedMilestone': lastVibratedMilestone,
+  };
 }
 
 String _requiredString(Object? value, String field) {
@@ -315,6 +506,9 @@ int _requiredPositiveInt(Object? value, String field) {
   if (value is int && value > 0) return value;
   throw FormatException('$field is invalid.');
 }
+
+int? _optionalPositiveInt(Object? value) =>
+    value is int && value > 0 ? value : null;
 
 int _requiredNonNegativeInt(Object? value, String field) {
   if (value is int && value >= 0) return value;

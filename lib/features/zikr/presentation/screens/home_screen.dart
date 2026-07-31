@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/islamic_artwork.dart';
 import '../../domain/zikr_models.dart';
+import '../widgets/tasbeeh_counter_widget.dart';
 import '../widgets/zikr_widgets.dart';
 import '../zikr_provider.dart';
 import 'zikr_details_screen.dart';
@@ -20,10 +21,12 @@ class HomeScreen extends ConsumerWidget {
   const HomeScreen({
     required this.onNewZikr,
     required this.onViewHistory,
+    this.scrollController,
     super.key,
   });
   final VoidCallback onNewZikr;
   final VoidCallback onViewHistory;
+  final ScrollController? scrollController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,10 +48,10 @@ class HomeScreen extends ConsumerWidget {
       0,
       (sum, item) => sum + min(item.completed, item.target),
     );
-    final featured = active.isEmpty ? null : active.first;
     return RefreshIndicator(
       onRefresh: ref.read(zikrProvider.notifier).refresh,
       child: CustomScrollView(
+        controller: scrollController,
         key: const PageStorageKey('home-scroll'),
         slivers: [
           SliverToBoxAdapter(child: _GreetingHeader(date: now)),
@@ -61,8 +64,23 @@ class HomeScreen extends ConsumerWidget {
             ),
             sliver: SliverList.list(
               children: [
+                ScreenHeader(
+                  title: 'Continue Your Journey',
+                  subtitle: 'Steady progress, one session at a time',
+                  action: FilledButton.icon(
+                    onPressed: onNewZikr,
+                    icon: const Icon(Icons.add),
+                    label: const Text('New Zikr'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _ContinueJourneySection(
+                  activeZikrs: active,
+                  onNewZikr: onNewZikr,
+                ),
+                const SizedBox(height: 20),
                 _TodayCard(value: today, date: now),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: 12),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final cards = [
@@ -83,10 +101,14 @@ class HomeScreen extends ConsumerWidget {
                     if (constraints.maxWidth >= 600) {
                       return Row(
                         children: [
-                          for (var index = 0; index < cards.length; index++) ...[
+                          for (
+                            var index = 0;
+                            index < cards.length;
+                            index++
+                          ) ...[
                             Expanded(child: cards[index]),
                             if (index < cards.length - 1)
-                              const SizedBox(width: AppSpacing.sm),
+                              const SizedBox(width: 12),
                           ],
                         ],
                       );
@@ -96,44 +118,19 @@ class HomeScreen extends ConsumerWidget {
                         Row(
                           children: [
                             Expanded(child: cards[0]),
-                            const SizedBox(width: AppSpacing.sm),
+                            const SizedBox(width: 12),
                             Expanded(child: cards[1]),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.sm),
-                        SizedBox(
-                          width: double.infinity,
-                          child: cards[2],
-                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(width: double.infinity, child: cards[2]),
                       ],
                     );
                   },
                 ),
-                const SizedBox(height: AppSpacing.xl),
-                ScreenHeader(
-                  title: 'Continue Your Journey',
-                  subtitle: 'Steady progress, one session at a time',
-                  action: FilledButton.icon(
-                    onPressed: onNewZikr,
-                    icon: const Icon(Icons.add),
-                    label: const Text('New Zikr'),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (featured == null)
-                  EmptyJourney(
-                    title: 'Begin your journey',
-                    message:
-                        'Create your first Zikr goal and record completed quantities as sessions.',
-                    action: FilledButton.icon(
-                      onPressed: onNewZikr,
-                      icon: const Icon(Icons.add),
-                      label: const Text('New Zikr'),
-                    ),
-                  )
-                else
-                  _FeaturedZikr(zikr: featured),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: 12),
+                const TasbeehCounterWidget(),
+                const SizedBox(height: 20),
                 ScreenHeader(
                   title: 'Recent Activity',
                   subtitle: 'Your latest completed sessions',
@@ -172,6 +169,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 }
+
 class _GreetingHeader extends ConsumerWidget {
   const _GreetingHeader({required this.date});
   final DateTime date;
@@ -187,10 +185,7 @@ class _GreetingHeader extends ConsumerWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.emerald950,
-            AppColors.emerald900,
-          ],
+          colors: [AppColors.emerald950, AppColors.emerald900],
         ),
         border: Border(
           bottom: BorderSide(
@@ -201,9 +196,7 @@ class _GreetingHeader extends ConsumerWidget {
       ),
       child: Stack(
         children: [
-          Positioned.fill(
-            child: const GreetingHeaderBackgroundWidget(),
-          ),
+          Positioned.fill(child: const GreetingHeaderBackgroundWidget()),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.lg,
@@ -238,10 +231,11 @@ class _GreetingHeader extends ConsumerWidget {
                           const SizedBox(height: 6),
                           Text(
                             'Peace be upon you',
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: AppColors.gold.withValues(alpha: 0.9),
-                              letterSpacing: 0.5,
-                            ),
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: AppColors.gold.withValues(alpha: 0.9),
+                                  letterSpacing: 0.5,
+                                ),
                           ),
                         ],
                       ),
@@ -276,10 +270,11 @@ class _GreetingHeader extends ConsumerWidget {
                           '$gregorianStr / $hijriStr',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppColors.ivory,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: AppColors.ivory,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
@@ -317,11 +312,12 @@ class _TodayCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         Text(
           formatQuantity(value),
-          style: AppTypography.textTheme(AppColors.emerald950).displayMedium?.copyWith(
-            color: AppColors.emerald950,
-            fontWeight: FontWeight.w800,
-            fontSize: 38,
-          ),
+          style: AppTypography.textTheme(AppColors.emerald950).displayMedium
+              ?.copyWith(
+                color: AppColors.emerald950,
+                fontWeight: FontWeight.w800,
+                fontSize: 38,
+              ),
         ),
         const SizedBox(height: 2),
         Text(
@@ -395,7 +391,7 @@ class _StreakCard extends StatelessWidget {
 }
 
 class _FeaturedZikr extends ConsumerWidget {
-  const _FeaturedZikr({required this.zikr});
+  const _FeaturedZikr({super.key, required this.zikr});
   final Zikr zikr;
 
   @override
@@ -449,9 +445,9 @@ class _FeaturedZikr extends ConsumerWidget {
                 children: [
                   Text(
                     zikr.name,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.ivory,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(color: AppColors.ivory),
                   ),
                   if (zikr.arabicName != null) ...[
                     const SizedBox(height: 2),
@@ -492,6 +488,94 @@ class _FeaturedZikr extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ContinueJourneySection extends StatefulWidget {
+  const _ContinueJourneySection({
+    required this.activeZikrs,
+    required this.onNewZikr,
+  });
+
+  final List<Zikr> activeZikrs;
+  final VoidCallback onNewZikr;
+
+  @override
+  State<_ContinueJourneySection> createState() =>
+      _ContinueJourneySectionState();
+}
+
+class _ContinueJourneySectionState extends State<_ContinueJourneySection> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.activeZikrs.isEmpty) {
+      return EmptyJourney(
+        title: 'Begin your journey',
+        message:
+            'Create your first Zikr goal and record completed quantities as sessions.',
+        action: FilledButton.icon(
+          onPressed: widget.onNewZikr,
+          icon: const Icon(Icons.add),
+          label: const Text('New Zikr'),
+        ),
+      );
+    }
+
+    final totalCount = widget.activeZikrs.length;
+    final visibleItems = _isExpanded
+        ? widget.activeZikrs
+        : widget.activeZikrs.take(3).toList();
+    final hiddenCount = totalCount - 3;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < visibleItems.length; i++) ...[
+          if (i > 0) const SizedBox(height: 12),
+          _FeaturedZikr(
+            key: ValueKey('journey-zikr-${visibleItems[i].id}'),
+            zikr: visibleItems[i],
+          ),
+        ],
+        if (totalCount > 3) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                backgroundColor: AppColors.emerald900.withValues(alpha: 0.25),
+                foregroundColor: AppColors.goldBright,
+                side: BorderSide(
+                  color: AppColors.goldMuted.withValues(alpha: 0.5),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              onPressed: () => setState(() => _isExpanded = !_isExpanded),
+              icon: Icon(
+                _isExpanded
+                    ? Icons.keyboard_arrow_up_rounded
+                    : Icons.keyboard_arrow_down_rounded,
+                color: AppColors.goldBright,
+              ),
+              label: Text(
+                _isExpanded ? 'Show Less' : 'View More ($hiddenCount)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

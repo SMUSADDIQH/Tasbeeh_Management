@@ -29,7 +29,8 @@ class HijriDateUtils {
 
     int a = (year / 100).floor();
     int b = 2 - a + (a / 4).floor();
-    int jd = (365.25 * (year + 4716)).floor() +
+    int jd =
+        (365.25 * (year + 4716)).floor() +
         (30.6001 * (month + 1)).floor() +
         day +
         b -
@@ -38,9 +39,11 @@ class HijriDateUtils {
     int l = jd - 1948440 + 10632;
     int n = ((l - 1) / 10631).floor();
     l = l - 10631 * n + 354;
-    int j = (((10985 - l) / 5316).floor()) * ((50 * l / 17719).floor()) +
+    int j =
+        (((10985 - l) / 5316).floor()) * ((50 * l / 17719).floor()) +
         ((l / 5670).floor()) * ((43 * l / 15238).floor());
-    l = l -
+    l =
+        l -
         (((30 - j) / 15).floor()) * ((17719 * j / 50).floor()) -
         ((j / 30).floor()) * ((15238 * j / 43).floor()) +
         29;

@@ -23,13 +23,16 @@ abstract final class AppTypography {
         ],
       );
 
-  static TextStyle arabicScript({Color? color, double fontSize = 20, FontWeight fontWeight = FontWeight.w600}) =>
-      GoogleFonts.amiri(
-        fontSize: fontSize,
-        height: 1.4,
-        fontWeight: fontWeight,
-        color: color,
-      );
+  static TextStyle arabicScript({
+    Color? color,
+    double fontSize = 20,
+    FontWeight fontWeight = FontWeight.w600,
+  }) => GoogleFonts.amiri(
+    fontSize: fontSize,
+    height: 1.4,
+    fontWeight: fontWeight,
+    color: color,
+  );
 
   static TextStyle headerTitle({Color? color, double fontSize = 24}) =>
       GoogleFonts.cinzel(
