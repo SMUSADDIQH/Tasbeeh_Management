@@ -23,7 +23,7 @@ void main() {
   setUp(() {
     zikrRepository = MemoryZikrRepository()
       ..zikr['z1'] = sampleZikr(completed: 100)
-      ..sessions['s1'] = sampleSession();
+      ..sessions['s1'] = sampleSession(timestamp: DateTime.now());
     settingsRepository = MemorySettingsRepository();
   });
 
@@ -51,8 +51,11 @@ void main() {
       app(HomeScreen(onNewZikr: () {}, onViewHistory: () {})),
     );
     await tester.pump();
-    expect(find.text('السلام عليكم'), findsOneWidget);
-    expect(find.text('Today’s Completed'), findsOneWidget);
+    expect(
+      find.text('أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ'),
+      findsOneWidget,
+    );
+    expect(find.text('Completed Today'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Continue Your Journey'),
       300,
@@ -80,7 +83,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(app(const HistoryScreen()));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('History'), findsOneWidget);
     expect(find.text('+100'), findsOneWidget);
     expect(find.textContaining('Total 100'), findsOneWidget);

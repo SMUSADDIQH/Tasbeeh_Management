@@ -133,7 +133,7 @@ void main() {
   );
 
   testWidgets(
-    'Home renders Continue Your Journey at the top before Todays Completed',
+    'Home renders Continue Your Journey at the top before Completed Today',
     (tester) async {
       await tester.pumpWidget(
         app(HomeScreen(onNewZikr: () {}, onViewHistory: () {})),
@@ -141,7 +141,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final continueFinder = find.text('Continue Your Journey');
-      final todaysFinder = find.text('Today’s Completed');
+      final todaysFinder = find.text('Completed Today');
 
       expect(continueFinder, findsOneWidget);
       expect(todaysFinder, findsOneWidget);
@@ -149,7 +149,7 @@ void main() {
       final continueY = tester.getTopLeft(continueFinder).dy;
       final todaysY = tester.getTopLeft(todaysFinder).dy;
 
-      // Continue Your Journey MUST be physically above Today's Completed
+      // Continue Your Journey MUST be physically above Completed Today
       expect(continueY < todaysY, isTrue);
     },
   );

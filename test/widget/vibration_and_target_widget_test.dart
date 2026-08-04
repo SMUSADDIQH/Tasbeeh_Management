@@ -60,6 +60,9 @@ void main() {
       await tester.pumpWidget(app(const TasbeehCounterWidget()));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('Live Zikr'));
+      await tester.pumpAndSettle();
+
       // ChoiceChip '34' is present
       final chip34 = find.widgetWithText(ChoiceChip, '34');
       expect(chip34, findsOneWidget);
@@ -87,6 +90,9 @@ void main() {
 
       // Start live counter for Sample (target 1000, completed 100) with Live Target 34
       await tester.pumpWidget(app(const TasbeehCounterWidget()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Live Zikr'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(ChoiceChip, '34'));
@@ -129,11 +135,14 @@ void main() {
     await tester.pumpWidget(app(const TasbeehCounterWidget()));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('Live Zikr'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Start Live Session'));
     await tester.pumpAndSettle();
 
     // Increment count by 1 (effective completed = 101)
-    await tester.tap(find.byType(GestureDetector).at(1));
+    await tester.tap(find.bySemanticsLabel(RegExp(r'Counter control')));
     await tester.pumpAndSettle();
 
     // Main Remaining should be clamped to 0, not negative

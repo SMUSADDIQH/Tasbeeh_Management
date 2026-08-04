@@ -63,6 +63,7 @@ class _AppShellState extends ConsumerState<AppShell> {
   }
 
   void _onDestinationSelected(int index) {
+    FocusScope.of(context).unfocus();
     if (_selectedIndex == index) {
       final targetController = switch (index) {
         0 => _homeScrollController,
@@ -96,6 +97,7 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
     final screens = [
       HomeScreen(
         onNewZikr: _newZikr,
@@ -144,21 +146,24 @@ class _AppShellState extends ConsumerState<AppShell> {
                     );
                   }
                   return Scaffold(
+                    resizeToAvoidBottomInset: true,
                     body: content,
-                    bottomNavigationBar: DecoratedBox(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          top: BorderSide(
-                            color: Theme.of(context).colorScheme.outlineVariant,
+                    bottomNavigationBar: keyboardVisible
+                        ? null
+                        : DecoratedBox(
+                            decoration: BoxDecoration(
+                              border: Border(
+                                top: BorderSide(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                              ),
+                            ),
+                            child: NavigationBar(
+                              selectedIndex: _selectedIndex,
+                              onDestinationSelected: _onDestinationSelected,
+                              destinations: _destinations,
+                            ),
                           ),
-                        ),
-                      ),
-                      child: NavigationBar(
-                        selectedIndex: _selectedIndex,
-                        onDestinationSelected: _onDestinationSelected,
-                        destinations: _destinations,
-                      ),
-                    ),
                   );
                 },
               ),

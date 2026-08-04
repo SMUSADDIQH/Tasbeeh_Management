@@ -2,18 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_review/in_app_review.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/islamic_artwork.dart';
+import '../../../zikr/data/arabic_name_translation_service.dart';
 import '../../../zikr/data/backup_service.dart';
+import '../../../zikr/domain/zikr_models.dart';
 import '../../../zikr/presentation/widgets/zikr_widgets.dart';
 import '../../../zikr/presentation/zikr_provider.dart';
 import '../../domain/models/app_settings.dart';
 import '../providers/settings_provider.dart';
+import '../services/app_share_service.dart';
 import '../widgets/settings_section.dart';
+import 'privacy_policy_screen.dart';
+import 'report_issue_screen.dart';
+import 'terms_of_use_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -63,16 +69,14 @@ class SettingsScreen extends ConsumerWidget {
                         .setAnimations,
                   ),
                   SwitchListTile(
-                    secondary: const Icon(Icons.translate_rounded),
-                    title: const Text('Auto-translate Zikr names'),
-                    subtitle: const Text(
-                      'Translate English Zikr names into Arabic while typing.',
-                    ),
-                    value: settings.autoTranslateZikrName,
+                    secondary: const Icon(Icons.animation_outlined),
+                    title: const Text('Animations'),
+                    value: settings.animationsEnabled,
                     onChanged: ref
                         .read(settingsProvider.notifier)
-                        .setAutoTranslateZikrName,
+                        .setAnimations,
                   ),
+                  _AutoTranslateTile(settings: settings),
                   SwitchListTile(
                     secondary: const Icon(Icons.notifications_none_rounded),
                     title: const Text('Reminders'),
@@ -103,7 +107,6 @@ class SettingsScreen extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.backup_outlined),
                     title: const Text('Backup and Restore'),
-                    subtitle: const Text('Version 2 JSON · merge or replace'),
                     onTap: () => _dataSheet(context, ref, settings),
                   ),
                   ListTile(
@@ -122,19 +125,20 @@ class SettingsScreen extends ConsumerWidget {
               SettingsSection(
                 title: 'Support',
                 children: [
-                  const ListTile(
-                    leading: Icon(Icons.help_outline),
-                    title: Text('Help and Support'),
-                    subtitle: Text('support@example.com'),
+                  ListTile(
+                    leading: const Icon(Icons.help_outline),
+                    title: const Text('Help and Support'),
+                    subtitle: const Text('support@riontix.com'),
+                    onTap: () => _launchHelpSupportEmail(context),
                   ),
                   ListTile(
                     leading: const Icon(Icons.bug_report_outlined),
                     title: const Text('Report Issue'),
-                    onTap: () => SharePlus.instance.share(
-                      ShareParams(
-                        text:
-                            'Issue report for app version ${state.appVersion} '
-                            '(${state.buildNumber})',
+                    subtitle: const Text('Describe an issue and email support'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ReportIssueScreen(),
                       ),
                     ),
                   ),
@@ -146,12 +150,7 @@ class SettingsScreen extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.share_outlined),
                     title: const Text('Share App'),
-                    onTap: () => SharePlus.instance.share(
-                      ShareParams(
-                        text:
-                            'A calm, offline-first way to manage Zikr goals and sessions.',
-                      ),
-                    ),
+                    onTap: () => const AppShareService().shareApp(context),
                   ),
                 ],
               ),
@@ -159,32 +158,42 @@ class SettingsScreen extends ConsumerWidget {
               SettingsSection(
                 title: 'About',
                 children: [
-                  ListTile(
-                    leading: const Icon(Icons.info_outline),
-                    title: const Text('Version'),
-                    subtitle: Text(
-                      '${state.appVersion} (${state.buildNumber})',
-                    ),
+                  const ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('Version'),
+                    subtitle: Text('v1.0.0'),
                   ),
                   ListTile(
                     leading: const Icon(Icons.balance_outlined),
                     title: const Text('Licenses'),
                     onTap: () => showLicensePage(context: context),
                   ),
-                  const ListTile(
-                    leading: Icon(Icons.privacy_tip_outlined),
-                    title: Text('Privacy Policy'),
-                    subtitle: Text('All Zikr data remains on this device'),
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: const Text('Privacy Policy'),
+                    subtitle: const Text('All Zikr data remains on this device'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PrivacyPolicyScreen(),
+                      ),
+                    ),
                   ),
-                  const ListTile(
-                    leading: Icon(Icons.description_outlined),
-                    title: Text('Terms'),
-                    subtitle: Text('Personal reflection and record keeping'),
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: const Text('Terms of Use'),
+                    subtitle: const Text('Personal reflection and record keeping'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const TermsOfUseScreen(),
+                      ),
+                    ),
                   ),
                   const ListTile(
                     leading: Icon(Icons.code_outlined),
                     title: Text('Developer'),
-                    subtitle: Text('Musaddiq'),
+                    subtitle: Text('Syed Musaddiq Hussainy'),
                   ),
                 ],
               ),
@@ -193,6 +202,77 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _launchHelpSupportEmail(BuildContext context) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'support@riontix.com',
+      queryParameters: {
+        'subject': 'Tasbeeh Management — Help and Support',
+        'body': 'Hi Riontix Support,\n\nI need assistance with:\n\n',
+      },
+    );
+    bool launched = false;
+    try {
+      if (await canLaunchUrl(emailUri)) {
+        launched = await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && context.mounted) {
+      _showNoEmailAppDialog(context);
+    }
+  }
+
+  void _showNoEmailAppDialog(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.emerald900,
+        title: const Text(
+          'No email app found',
+          style: TextStyle(
+            color: AppColors.goldBright,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'No email app was found. Please contact support@riontix.com manually.',
+          style: TextStyle(color: AppColors.ivory),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: AppColors.softGold),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.goldBright,
+              foregroundColor: AppColors.emerald950,
+            ),
+            onPressed: () {
+              Clipboard.setData(
+                const ClipboardData(text: 'support@riontix.com'),
+              );
+              Navigator.pop(dialogContext);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Copied support@riontix.com to clipboard.'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Copy Email'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -210,14 +290,7 @@ class SettingsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final item in const [
-                'Morning',
-                'After Fajr',
-                'Afternoon',
-                'Evening',
-                'Night',
-                'Custom',
-              ])
+              for (final item in kPredefinedSessionLabels)
                 RadioListTile<String>(title: Text(item), value: item),
             ],
           ),
@@ -507,4 +580,120 @@ class _ThemeTile extends ConsumerWidget {
           ],
         ),
       );
+}
+
+class _AutoTranslateTile extends ConsumerStatefulWidget {
+  const _AutoTranslateTile({required this.settings});
+  final AppSettings settings;
+
+  @override
+  ConsumerState<_AutoTranslateTile> createState() => _AutoTranslateTileState();
+}
+
+class _AutoTranslateTileState extends ConsumerState<_AutoTranslateTile> {
+  bool _isChecking = false;
+  bool _isDownloading = false;
+  bool? _isReady;
+  String? _statusText;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.settings.autoTranslateZikrName) {
+      _checkAndPrepare(force: false);
+    }
+  }
+
+  Future<void> _checkAndPrepare({bool force = false}) async {
+    if (!mounted) return;
+    setState(() {
+      _isChecking = !force;
+      _isDownloading = force;
+      _statusText = force ? 'Downloading offline translation…' : null;
+    });
+
+    final service = ref.read(arabicTranslationServiceProvider);
+    final ready = await service.prepareModels(
+      onProgress: (msg) {
+        if (mounted) setState(() => _statusText = msg);
+      },
+      force: force,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isChecking = false;
+        _isDownloading = false;
+        _isReady = ready;
+        _statusText = ready
+            ? 'Offline Arabic translation ready'
+            : 'Translation model unavailable';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.settings.autoTranslateZikrName;
+    return Column(
+      children: [
+        SwitchListTile(
+          secondary: const Icon(Icons.translate_rounded),
+          title: const Text('Auto-translate Zikr names'),
+          subtitle: const Text(
+            'Translate English Zikr names into Arabic while typing.',
+          ),
+          value: enabled,
+          onChanged: (val) async {
+            await ref.read(settingsProvider.notifier).setAutoTranslateZikrName(val);
+            if (val) {
+              _checkAndPrepare(force: true);
+            } else {
+              setState(() {
+                _isReady = null;
+                _statusText = null;
+              });
+            }
+          },
+        ),
+        if (enabled && (_statusText != null || _isChecking || _isDownloading)) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 40),
+                Expanded(
+                  child: Text(
+                    _statusText ?? 'Checking offline translation models…',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _isReady == true
+                          ? AppColors.goldBright
+                          : AppColors.mutedGold,
+                    ),
+                  ),
+                ),
+                if (_isReady == false && !_isDownloading)
+                  TextButton(
+                    onPressed: () => _checkAndPrepare(force: true),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Retry Download',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
 }

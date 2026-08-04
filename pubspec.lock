@@ -236,18 +236,18 @@ packages:
     dependency: transitive
     description:
       name: google_mlkit_commons
-      sha256: "3e69fea4211727732cc385104e675ad1e40b29f12edd492ee52fa108423a6124"
+      sha256: c7fc384bdb66c3b83e24e3a41818e61d7a378d900f65f5e775344fbca95a0917
       url: "https://pub.dev"
     source: hosted
-    version: "0.11.1"
+    version: "0.12.0"
   google_mlkit_translation:
     dependency: "direct main"
     description:
       name: google_mlkit_translation
-      sha256: "5cb1c156d926cb5f4795674835d9df480366e002a3a7e17729d2ee472aed11ae"
+      sha256: "7d8446088a15f00407f03b0bbb4b6364aa72050625aba89dc5de76df6e12ea65"
       url: "https://pub.dev"
     source: hosted
-    version: "0.13.1"
+    version: "0.14.0"
   hive:
     dependency: "direct main"
     description:
@@ -662,7 +662,7 @@ packages:
     source: hosted
     version: "2.3.1"
   url_launcher:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: url_launcher
       sha256: f6a7e5c4835bb4e3026a04793a4199ca2d14c739ec378fdfe23fc8075d0439f8

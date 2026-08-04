@@ -1257,8 +1257,20 @@ class _SessionFormSheet extends StatefulWidget {
 }
 
 class _SessionFormSheetState extends State<_SessionFormSheet> {
+  static const _predefinedLabels = [
+    'Daily Session',
+    'Morning',
+    'After Fajr',
+    'After Maghrib',
+    'Night Zikr',
+    'Custom',
+  ];
+
   late final TextEditingController _amountController;
   late final TextEditingController _noteController;
+  late final TextEditingController _customLabelController;
+  final _customLabelFocusNode = FocusNode();
+  final _customLabelKey = GlobalKey();
 
   late String _label;
   late DateTime _timestamp;
@@ -1272,7 +1284,18 @@ class _SessionFormSheetState extends State<_SessionFormSheet> {
       text: existing?.amount.toString(),
     );
     _noteController = TextEditingController(text: existing?.note);
-    _label = existing?.label ?? widget.defaultLabel;
+
+    final existingLabel = existing?.label;
+    if (existingLabel != null && !_predefinedLabels.contains(existingLabel)) {
+      _label = 'Custom';
+      _customLabelController = TextEditingController(text: existingLabel);
+    } else {
+      _label = existingLabel ?? widget.defaultLabel;
+      if (!_predefinedLabels.contains(_label)) {
+        _label = 'Daily Session';
+      }
+      _customLabelController = TextEditingController();
+    }
     _timestamp = existing?.timestamp ?? DateTime.now();
   }
 
@@ -1280,6 +1303,8 @@ class _SessionFormSheetState extends State<_SessionFormSheet> {
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _customLabelController.dispose();
+    _customLabelFocusNode.dispose();
     super.dispose();
   }
 
@@ -1290,6 +1315,20 @@ class _SessionFormSheetState extends State<_SessionFormSheet> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Enter a positive amount.')));
+      return;
+    }
+    if (_label == 'Custom' && _customLabelController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a custom session label.')),
+      );
+      _customLabelFocusNode.requestFocus();
+      if (_customLabelKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          _customLabelKey.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
       return;
     }
     if (value >= 1000000 ||
@@ -1307,11 +1346,15 @@ class _SessionFormSheetState extends State<_SessionFormSheet> {
     _submitted = true;
     FocusScope.of(context).unfocus();
 
+    final effectiveLabel = _label == 'Custom'
+        ? _customLabelController.text.trim()
+        : _label;
+
     Navigator.of(context).pop(
       _SessionDraft(
         amount: value,
         timestamp: _timestamp,
-        label: _label,
+        label: effectiveLabel,
         note: _noteController.text.trim().isEmpty
             ? null
             : _noteController.text.trim(),
@@ -1355,7 +1398,7 @@ class _SessionFormSheetState extends State<_SessionFormSheet> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(color: AppColors.softGold),
               decoration: const InputDecoration(
-                labelText: 'Completed amount',
+                labelText: 'Completed Count',
                 labelStyle: TextStyle(color: AppColors.premiumGold),
                 hintStyle: TextStyle(color: AppColors.mutedGold),
                 prefixIcon: Icon(
@@ -1385,36 +1428,47 @@ class _SessionFormSheetState extends State<_SessionFormSheet> {
             ),
             const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<String>(
-              initialValue: _label,
+              initialValue: _predefinedLabels.contains(_label) ? _label : 'Custom',
               dropdownColor: AppColors.emerald850,
               style: const TextStyle(color: AppColors.softGold),
               decoration: const InputDecoration(
                 labelText: 'Session label',
                 labelStyle: TextStyle(color: AppColors.premiumGold),
               ),
-              items:
-                  const [
-                        'Morning',
-                        'After Fajr',
-                        'Afternoon',
-                        'Evening',
-                        'Night',
-                        'Custom',
-                      ]
-                      .map(
-                        (item) => DropdownMenuItem(
-                          value: item,
-                          child: Text(
-                            item,
-                            style: const TextStyle(color: AppColors.softGold),
-                          ),
-                        ),
-                      )
-                      .toList(),
+              items: _predefinedLabels
+                  .map(
+                    (item) => DropdownMenuItem(
+                      value: item,
+                      child: Text(
+                        item,
+                        style: const TextStyle(color: AppColors.softGold),
+                      ),
+                    ),
+                  )
+                  .toList(),
               onChanged: (value) {
                 if (value != null) setState(() => _label = value);
               },
             ),
+            if (_label == 'Custom') ...[
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                key: _customLabelKey,
+                focusNode: _customLabelFocusNode,
+                controller: _customLabelController,
+                style: const TextStyle(color: AppColors.softGold),
+                decoration: const InputDecoration(
+                  labelText: 'Custom session label',
+                  hintText: 'Enter a session label',
+                  labelStyle: TextStyle(color: AppColors.premiumGold),
+                  hintStyle: TextStyle(color: AppColors.mutedGold),
+                  prefixIcon: Icon(
+                    Icons.label_outlined,
+                    color: AppColors.premiumGold,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -1498,11 +1552,28 @@ Future<bool> showConfirmDialog(
   return await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(title),
-          content: Text(message),
+          backgroundColor: AppColors.darkCardBg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.goldMuted),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.goldBright,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(color: AppColors.ivory),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.goldBright,
+              ),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -1511,10 +1582,19 @@ Future<bool> showConfirmDialog(
                       backgroundColor: Theme.of(
                         dialogContext,
                       ).colorScheme.error,
+                      foregroundColor: Theme.of(
+                        dialogContext,
+                      ).colorScheme.onError,
                     )
-                  : null,
+                  : FilledButton.styleFrom(
+                      backgroundColor: AppColors.goldBright,
+                      foregroundColor: AppColors.emerald950,
+                    ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(confirmLabel),
+              child: Text(
+                confirmLabel,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

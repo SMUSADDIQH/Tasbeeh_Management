@@ -19,6 +19,10 @@ class HistoryScreen extends ConsumerStatefulWidget {
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   ScrollController? _internalController;
+  final _searchFocusNode = FocusNode();
+  final _searchKey = GlobalKey();
+  final _searchController = TextEditingController();
+  bool _isSearching = false;
 
   ScrollController get _effectiveController =>
       widget.scrollController ?? (_internalController ??= ScrollController());
@@ -27,6 +31,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   void initState() {
     super.initState();
     _effectiveController.addListener(_onScroll);
+    _searchController.text = ref.read(zikrProvider).search;
   }
 
   @override
@@ -50,7 +55,162 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   void dispose() {
     _effectiveController.removeListener(_onScroll);
     _internalController?.dispose();
+    _searchFocusNode.dispose();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  void _enterSearchMode() {
+    setState(() {
+      _isSearching = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _searchFocusNode.requestFocus();
+    });
+  }
+
+  void _exitSearchMode() {
+    _searchController.clear();
+    ref.read(zikrProvider.notifier).setSearch('');
+    _searchFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isSearching = false;
+    });
+  }
+
+  Future<void> _onFilterIconPressed() async {
+    final state = ref.read(zikrProvider);
+    var period = state.historyPeriod;
+    var zikrId = state.historyZikrId;
+    var sortOrder = state.historySortOrder;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Filter Sessions',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref.read(zikrProvider.notifier).resetHistoryFilters();
+                          _searchController.clear();
+                          Navigator.pop(sheetContext);
+                        },
+                        child: const Text('Reset Filters'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Date Range',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  AppSegmentedControl<HistoryPeriod>(
+                    isDarkBackground: true,
+                    tabs: const [
+                      AppSegmentedTab(value: HistoryPeriod.today, label: 'Today'),
+                      AppSegmentedTab(
+                        value: HistoryPeriod.week,
+                        label: 'This Week',
+                      ),
+                      AppSegmentedTab(
+                        value: HistoryPeriod.month,
+                        label: 'This Month',
+                      ),
+                      AppSegmentedTab(
+                        value: HistoryPeriod.all,
+                        label: 'All Time',
+                      ),
+                    ],
+                    selected: period,
+                    onChanged: (val) => setSheetState(() => period = val),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Zikr Filter',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  DropdownButtonFormField<String?>(
+                    initialValue: zikrId,
+                    decoration: const InputDecoration(labelText: 'Zikr'),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('All Zikr'),
+                      ),
+                      for (final item in state.zikr)
+                        DropdownMenuItem(value: item.id, child: Text(item.name)),
+                    ],
+                    onChanged: (val) => setSheetState(() => zikrId = val),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Sort Order',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  RadioGroup<HistorySortOrder>(
+                    groupValue: sortOrder,
+                    onChanged: (val) {
+                      if (val != null) setSheetState(() => sortOrder = val);
+                    },
+                    child: Column(
+                      children: [
+                        RadioListTile<HistorySortOrder>(
+                          title: const Text('Newest first'),
+                          value: HistorySortOrder.newestFirst,
+                        ),
+                        RadioListTile<HistorySortOrder>(
+                          title: const Text('Oldest first'),
+                          value: HistorySortOrder.oldestFirst,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  FilledButton(
+                    onPressed: () {
+                      ref.read(zikrProvider.notifier).setHistoryPeriod(period);
+                      ref.read(zikrProvider.notifier).setHistoryZikr(zikrId);
+                      ref
+                          .read(zikrProvider.notifier)
+                          .setHistorySortOrder(sortOrder);
+                      Navigator.pop(sheetContext);
+                    },
+                    child: const Text('Apply Filters'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -58,6 +218,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final state = ref.watch(zikrProvider);
     final sessions = state.filteredSessions(DateTime.now());
     DateTime? lastDay;
+
+    if (_searchController.text != state.search) {
+      _searchController.value = _searchController.value.copyWith(
+        text: state.search,
+        selection: TextSelection.collapsed(offset: state.search.length),
+      );
+    }
+
     return RefreshIndicator(
       onRefresh: ref.read(zikrProvider.notifier).refresh,
       child: CustomScrollView(
@@ -68,32 +236,61 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
             padding: const EdgeInsets.all(AppSpacing.lg),
             sliver: SliverList.list(
               children: [
-                ScreenHeader(
-                  title: 'History',
-                  subtitle: 'Your completed sessions',
-                  action: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton.filledTonal(
-                        tooltip: 'Search sessions',
-                        onPressed: () {},
-                        icon: const Icon(Icons.search),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton.filledTonal(
-                        tooltip: 'Filter sessions',
-                        onPressed: () {},
-                        icon: const Icon(Icons.filter_list_rounded),
-                      ),
-                    ],
+                if (_isSearching)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          tooltip: 'Close search',
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: _exitSearchMode,
+                        ),
+                        Expanded(
+                          child: TextField(
+                            key: _searchKey,
+                            focusNode: _searchFocusNode,
+                            controller: _searchController,
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: 'Search sessions...',
+                              suffixIcon: state.search.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        ref.read(zikrProvider.notifier).setSearch('');
+                                      },
+                                    )
+                                  : null,
+                            ),
+                            onChanged: ref.read(zikrProvider.notifier).setSearch,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ScreenHeader(
+                    title: 'History',
+                    subtitle: 'Your completed sessions',
+                    action: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'Search sessions',
+                          onPressed: _enterSearchMode,
+                          icon: const Icon(Icons.search),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: 'Filter sessions',
+                          onPressed: _onFilterIconPressed,
+                          icon: const Icon(Icons.filter_list_rounded),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                SearchBar(
-                  hintText: 'Search sessions',
-                  leading: const Icon(Icons.search),
-                  onChanged: ref.read(zikrProvider.notifier).setSearch,
-                ),
                 const SizedBox(height: AppSpacing.md),
                 AppSegmentedControl<HistoryPeriod>(
                   isDarkBackground: true,
@@ -141,11 +338,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               child: Center(child: CircularProgressIndicator()),
             )
           else if (sessions.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyJourney(
-                title: 'No completed sessions',
-                message: 'Record an Add Session entry and it will appear here.',
+                title: state.search.isNotEmpty
+                    ? 'No matching sessions'
+                    : 'No completed sessions',
+                message: state.search.isNotEmpty
+                    ? 'Try adjusting your search query or filters.'
+                    : 'Record an Add Session entry and it will appear here.',
               ),
             )
           else

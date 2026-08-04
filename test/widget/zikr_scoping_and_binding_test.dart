@@ -76,6 +76,9 @@ void main() {
       await tester.pumpWidget(app(const TasbeehCounterWidget()));
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('Live Zikr'));
+      await tester.pumpAndSettle();
+
       // Select Sample2 in Live Counter dropdown
       await tester.tap(
         find.byWidgetPredicate((w) => w is DropdownButtonFormField<String>),
@@ -129,6 +132,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(app(const TasbeehCounterWidget()));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Live Zikr'));
       await tester.pumpAndSettle();
 
       // Select Sample2 and start Live Counter
@@ -291,7 +297,10 @@ void main() {
       await tester.pumpWidget(app(const TasbeehCounterWidget()));
       await tester.pumpAndSettle();
 
-      // Live mode select Sample2
+      // Switch to Live Zikr mode select Sample2
+      await tester.tap(find.text('Live Zikr'));
+      await tester.pumpAndSettle();
+
       await tester.tap(
         find.byWidgetPredicate((w) => w is DropdownButtonFormField<String>),
       );

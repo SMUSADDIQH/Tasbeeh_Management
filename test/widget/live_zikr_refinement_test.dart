@@ -72,6 +72,10 @@ void main() {
       expect(find.text('Live Zikr'), findsOneWidget);
       expect(find.text('Manual Entry'), findsOneWidget);
 
+      // Switch to Live Zikr tab
+      await tester.tap(find.text('Live Zikr'));
+      await tester.pumpAndSettle();
+
       // Start Live Session for Sample1
       await tester.tap(find.text('Start Live Session'));
       await tester.pumpAndSettle();
@@ -110,6 +114,10 @@ void main() {
       await tester.pumpWidget(buildApp(const TasbeehCounterWidget()));
       await tester.pumpAndSettle();
 
+      // Switch to Live Zikr tab
+      await tester.tap(find.text('Live Zikr'));
+      await tester.pumpAndSettle();
+
       // Start live session for Sample1
       await tester.tap(find.text('Start Live Session'));
       await tester.pumpAndSettle();
@@ -139,6 +147,10 @@ void main() {
       await tester.pumpWidget(
         buildApp(const TasbeehCounterWidget(initialZikrId: 's1')),
       );
+      await tester.pumpAndSettle();
+
+      // Switch to Live Zikr tab
+      await tester.tap(find.text('Live Zikr'));
       await tester.pumpAndSettle();
 
       // Locked badge shown

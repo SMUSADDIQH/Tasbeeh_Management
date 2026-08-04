@@ -3,13 +3,18 @@ class IslamicPhraseResolver {
 
   static String normalize(String text) {
     var s = text.trim().toLowerCase();
-    s = s.replaceAll(RegExp(r"['’`\-–]"), '');
+    s = s.replaceAll(RegExp(r'[\-–]'), ' ');
+    s = s.replaceAll(RegExp(r"['’`]"), '');
     s = s.replaceAll(RegExp(r'[^\w\s]'), '');
     s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
     return s;
   }
 
   static const Map<String, String> _phraseMap = {
+    'ayat e kareem': 'آية الكريمة',
+    'ayat e karima': 'آية الكريمة',
+    'ayatekarima': 'آية الكريمة',
+    'ayat e kareema': 'آية الكريمة',
     'subhanallah': 'سبحان الله',
     'subhan allah': 'سبحان الله',
     'alhamdulillah': 'الحمد لله',
@@ -30,7 +35,7 @@ class IslamicPhraseResolver {
     'hasbunallahu wa nimal wakeel': 'حسبنا الله ونعم الوكيل',
     'allahumma salli ala muhammad': 'اللهم صل على محمد',
     'allahumma salli ala sayyidina muhammad': 'اللهم صل على محمد',
-    'bismillah': 'بسم الله الرحمن الرحيم',
+    'bismillah': 'بسم الله',
     'bismillahir rahmanir raheem': 'بسم الله الرحمن الرحيم',
   };
 

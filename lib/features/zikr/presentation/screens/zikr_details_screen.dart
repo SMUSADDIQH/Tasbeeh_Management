@@ -259,7 +259,7 @@ class _ZikrDetailsScreenState extends ConsumerState<ZikrDetailsScreen> {
             runSpacing: AppSpacing.md,
             children: [
               _Insight(
-                label: 'Today’s Completed',
+                label: 'Completed Today',
                 value: formatQuantity(today),
               ),
               _Insight(

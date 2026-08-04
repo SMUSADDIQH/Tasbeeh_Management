@@ -6,7 +6,21 @@ enum ZikrFilter { active, completed, archived }
 
 enum HistoryPeriod { today, week, month, all }
 
+enum HistorySortOrder { newestFirst, oldestFirst }
+
 enum ReflectionPeriod { today, week, month, year, all }
+
+const List<String> kPredefinedSessionLabels = [
+  'Daily Session',
+  'Morning',
+  'After Fajr',
+  'Afternoon',
+  'After Maghrib',
+  'Evening',
+  'Night',
+  'Night Zikr',
+  'Custom',
+];
 
 extension ZikrCategoryLabel on ZikrCategory {
   String get label => switch (this) {

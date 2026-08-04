@@ -34,8 +34,9 @@ class ZikrState {
     this.hasMore = true,
     this.search = '',
     this.zikrFilter = ZikrFilter.active,
-    this.historyPeriod = HistoryPeriod.all,
+    this.historyPeriod = HistoryPeriod.today,
     this.historyZikrId,
+    this.historySortOrder = HistorySortOrder.newestFirst,
     this.error,
     this.revision = 0,
   });
@@ -52,6 +53,7 @@ class ZikrState {
   final ZikrFilter zikrFilter;
   final HistoryPeriod historyPeriod;
   final String? historyZikrId;
+  final HistorySortOrder historySortOrder;
   final String? error;
   final int revision;
 
@@ -73,6 +75,7 @@ class ZikrState {
     HistoryPeriod? historyPeriod,
     String? historyZikrId,
     bool clearHistoryZikr = false,
+    HistorySortOrder? historySortOrder,
     String? error,
     bool clearError = false,
     int? revision,
@@ -95,6 +98,7 @@ class ZikrState {
     historyZikrId: clearHistoryZikr
         ? null
         : historyZikrId ?? this.historyZikrId,
+    historySortOrder: historySortOrder ?? this.historySortOrder,
     error: clearError ? null : error ?? this.error,
     revision: revision ?? this.revision,
   );
@@ -127,7 +131,7 @@ class ZikrState {
       HistoryPeriod.all => DateTime.fromMillisecondsSinceEpoch(0),
     };
     final query = search.trim().toLowerCase();
-    return sessions.where((session) {
+    final result = sessions.where((session) {
       final item = zikr.where((z) => z.id == session.zikrId).firstOrNull;
       return session.timestamp.isAfter(
             start.subtract(const Duration(seconds: 1)),
@@ -140,6 +144,12 @@ class ZikrState {
               session.note?.toLowerCase().contains(query) == true ||
               session.label?.toLowerCase().contains(query) == true);
     }).toList();
+
+    result.sort((a, b) => historySortOrder == HistorySortOrder.newestFirst
+        ? b.timestamp.compareTo(a.timestamp)
+        : a.timestamp.compareTo(b.timestamp));
+
+    return result;
   }
 }
 
@@ -688,6 +698,15 @@ class ZikrNotifier extends StateNotifier<ZikrState> {
       state = state.copyWith(historyPeriod: value);
   void setHistoryZikr(String? id) =>
       state = state.copyWith(historyZikrId: id, clearHistoryZikr: id == null);
+  void setHistorySortOrder(HistorySortOrder value) =>
+      state = state.copyWith(historySortOrder: value);
+  void resetHistoryFilters() => state = state.copyWith(
+        historyPeriod: HistoryPeriod.today,
+        historyZikrId: null,
+        clearHistoryZikr: true,
+        historySortOrder: HistorySortOrder.newestFirst,
+        search: '',
+      );
 
   Future<void> clearHistory() async {
     final zikr = state.zikr;

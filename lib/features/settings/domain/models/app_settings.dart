@@ -17,7 +17,7 @@ class AppSettings {
     hapticFeedbackEnabled: true,
     animationsEnabled: true,
     remindersEnabled: false,
-    defaultSessionLabel: 'After Fajr',
+    defaultSessionLabel: 'Daily Session',
     autoTranslateZikrName: false,
   );
 
@@ -33,7 +33,7 @@ class AppSettings {
     hapticFeedbackEnabled: map['hapticFeedbackEnabled'] as bool? ?? true,
     animationsEnabled: map['animationsEnabled'] as bool? ?? true,
     remindersEnabled: map['remindersEnabled'] as bool? ?? false,
-    defaultSessionLabel: map['defaultSessionLabel'] as String? ?? 'After Fajr',
+    defaultSessionLabel: map['defaultSessionLabel'] as String? ?? 'Daily Session',
     autoTranslateZikrName: map['autoTranslateZikrName'] as bool? ?? false,
   );
 

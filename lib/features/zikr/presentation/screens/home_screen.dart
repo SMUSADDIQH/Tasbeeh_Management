@@ -216,30 +216,44 @@ class _GreetingHeader extends ConsumerWidget {
                         children: [
                           Semantics(
                             header: true,
-                            label: 'Assalamu Alaikum',
+                            label: 'Qur’an 13:28',
                             child: Directionality(
                               textDirection: TextDirection.rtl,
                               child: Text(
-                                'السلام عليكم',
+                                'أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ',
                                 style: AppTypography.arabicGreeting(
                                   color: AppColors.goldBright,
-                                  fontSize: 38,
+                                  fontSize: 25,
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Peace be upon you',
+                            'Surely, in the remembrance of Allah do hearts find peace.',
                             style: Theme.of(context).textTheme.titleSmall
                                 ?.copyWith(
-                                  color: AppColors.gold.withValues(alpha: 0.9),
+                                  color: AppColors.ivory,
+                                  height: 1.35,
+                                  letterSpacing: 0.2,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Qur’an 13:28',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: AppColors.softGold.withValues(
+                                    alpha: 0.9,
+                                  ),
+                                  fontWeight: FontWeight.w600,
                                   letterSpacing: 0.5,
                                 ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(width: 12),
                     const IslamicAppLogo(size: 48, borderRadius: 13),
                   ],
                 ),
@@ -303,7 +317,7 @@ class _TodayCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Today’s Completed',
+          'Completed Today',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: AppColors.emerald900,
             fontWeight: FontWeight.w700,
@@ -409,19 +423,22 @@ class _FeaturedZikr extends ConsumerWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm + 4,
+          vertical: AppSpacing.sm,
+        ),
         child: Row(
           children: [
             SizedBox(
-              width: 80,
-              height: 80,
+              width: 60,
+              height: 60,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
                   SizedBox.expand(
                     child: CircularProgressIndicator(
                       value: zikr.progress,
-                      strokeWidth: 8,
+                      strokeWidth: 5,
                       strokeCap: StrokeCap.round,
                       color: identity,
                       backgroundColor: identity.withValues(alpha: 0.18),
@@ -430,60 +447,83 @@ class _FeaturedZikr extends ConsumerWidget {
                   ),
                   Text(
                     percentText,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.goldBright,
                       fontWeight: FontWeight.w800,
+                      fontSize: 11,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: AppSpacing.lg),
+            const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    zikr.name,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(color: AppColors.ivory),
-                  ),
-                  if (zikr.arabicName != null) ...[
-                    const SizedBox(height: 2),
-                    Directionality(
-                      textDirection: TextDirection.rtl,
-                      child: Text(
-                        zikr.arabicName!,
-                        style: AppTypography.arabicScript(
-                          color: AppColors.goldBright,
-                          fontSize: 16,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          zikr.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: AppColors.ivory,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: AppSpacing.xs),
+                      if (zikr.arabicName != null) ...[
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: Text(
+                              zikr.arabicName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.arabicScript(
+                                color: AppColors.goldBright,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
                   Text(
                     '${formatQuantity(zikr.completed)} / ${formatQuantity(zikr.target)} Completed',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textSecondary,
+                      fontSize: 12,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     '${formatQuantity(zikr.remaining)} Remaining',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: AppColors.goldBright,
                       fontWeight: FontWeight.w700,
+                      fontSize: 11,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 4),
             const Icon(
               Icons.chevron_right_rounded,
               color: AppColors.goldMuted,
-              size: 28,
+              size: 22,
             ),
           ],
         ),

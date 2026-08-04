@@ -1,4 +1,4 @@
-package com.musaddiq.tasbeehtracker
+package com.riontix.tasbeehmanagement
 
 import android.os.Build
 import android.os.Bundle

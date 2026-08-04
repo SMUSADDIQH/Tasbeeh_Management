@@ -13,6 +13,24 @@ class FakeArabicNameTranslationService implements ArabicNameTranslationService {
   bool get isSupportedPlatform => true;
 
   @override
+  Future<bool> checkModelStatus() async {
+    return isModelPrepared;
+  }
+
+  @override
+  Future<bool> prepareModels({
+    void Function(String message)? onProgress,
+    bool force = false,
+  }) async {
+    if (shouldFail) {
+      onProgress?.call('Translation model unavailable');
+      return false;
+    }
+    onProgress?.call('Offline Arabic translation ready');
+    return true;
+  }
+
+  @override
   Future<TranslationResult> translate(
     String text, {
     void Function(String message)? onProgress,

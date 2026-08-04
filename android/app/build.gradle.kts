@@ -18,7 +18,7 @@ val hasReleaseSigning =
         .all { !keystoreProperties.getProperty(it).isNullOrBlank() }
 
 android {
-    namespace = "com.musaddiq.tasbeehtracker"
+    namespace = "com.riontix.tasbeehmanagement"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.musaddiq.tasbeehtracker"
+        applicationId = "com.riontix.tasbeehmanagement"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

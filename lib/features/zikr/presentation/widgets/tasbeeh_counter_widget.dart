@@ -27,7 +27,7 @@ class TasbeehCounterWidget extends ConsumerStatefulWidget {
 }
 
 class _TasbeehCounterWidgetState extends ConsumerState<TasbeehCounterWidget> {
-  CounterViewMode _viewMode = CounterViewMode.live;
+  CounterViewMode _viewMode = CounterViewMode.manual;
 
   // Independent Selection States for Global / Home Mode
   String? _liveSelectedZikrId;
@@ -244,14 +244,14 @@ class _TasbeehCounterWidgetState extends ConsumerState<TasbeehCounterWidget> {
           AppSegmentedControl<CounterViewMode>(
             tabs: const [
               AppSegmentedTab(
-                value: CounterViewMode.live,
-                label: 'Live Zikr',
-                icon: Icons.touch_app_outlined,
-              ),
-              AppSegmentedTab(
                 value: CounterViewMode.manual,
                 label: 'Manual Entry',
                 icon: Icons.edit_note_outlined,
+              ),
+              AppSegmentedTab(
+                value: CounterViewMode.live,
+                label: 'Live Zikr',
+                icon: Icons.touch_app_outlined,
               ),
             ],
             selected: _viewMode,
@@ -302,29 +302,40 @@ class _TasbeehCounterWidgetState extends ConsumerState<TasbeehCounterWidget> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.darkCardBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.goldMuted),
+        ),
         title: const Text(
           'Submit Live Session?',
           style: TextStyle(
-            color: AppColors.darkEmerald,
+            color: AppColors.goldBright,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           'Submit the current count of $count for "${currentZikr.name}" as a completed session?',
-          style: const TextStyle(color: AppColors.darkEmerald),
+          style: const TextStyle(color: AppColors.ivory),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.goldBright,
+            ),
             child: const Text('Continue Counting'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.emerald900,
-              foregroundColor: AppColors.ivory,
+              backgroundColor: AppColors.goldBright,
+              foregroundColor: AppColors.emerald950,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Submit Session'),
+            child: const Text(
+              'Submit Session',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),

@@ -5,6 +5,15 @@ import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 import 'islamic_phrase_resolver.dart';
 
+enum TranslationModelState {
+  disabled,
+  checkingModels,
+  downloadingModels,
+  ready,
+  translating,
+  error,
+}
+
 enum TranslationStatus { idle, preparingModels, translating, success, error }
 
 class TranslationResult {
@@ -34,6 +43,92 @@ class ArabicNameTranslationService {
       (defaultTargetPlatform == TargetPlatform.android ||
           defaultTargetPlatform == TargetPlatform.iOS);
 
+  Future<bool> checkModelStatus() async {
+    if (!isSupportedPlatform) return false;
+    try {
+      final manager = OnDeviceTranslatorModelManager();
+      final en = await manager
+          .isModelDownloaded(TranslateLanguage.english.bcpCode)
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
+      final ar = await manager
+          .isModelDownloaded(TranslateLanguage.arabic.bcpCode)
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
+      return en && ar;
+    } on Object catch (e, st) {
+      debugPrint('ML Kit checkModelStatus error: $e\n$st');
+      return false;
+    }
+  }
+
+  Future<bool> prepareModels({
+    void Function(String message)? onProgress,
+    bool force = false,
+  }) async {
+    if (!isSupportedPlatform) return false;
+    if (!force && _preparationFuture != null) {
+      return _preparationFuture!;
+    }
+    _preparationFuture = _internalPrepareModels(onProgress);
+    return _preparationFuture!;
+  }
+
+  Future<bool> _internalPrepareModels(
+    void Function(String message)? onProgress,
+  ) async {
+    final manager = OnDeviceTranslatorModelManager();
+
+    try {
+      final enDownloaded = await manager
+          .isModelDownloaded(TranslateLanguage.english.bcpCode)
+          .timeout(const Duration(seconds: 10), onTimeout: () => false);
+
+      final arDownloaded = await manager
+          .isModelDownloaded(TranslateLanguage.arabic.bcpCode)
+          .timeout(const Duration(seconds: 10), onTimeout: () => false);
+
+      if (enDownloaded && arDownloaded) {
+        onProgress?.call('Offline Arabic translation ready');
+        return true;
+      }
+
+      onProgress?.call('Downloading offline Arabic translation…');
+
+      var success = true;
+
+      if (!enDownloaded) {
+        final enRes = await manager
+            .downloadModel(
+              TranslateLanguage.english.bcpCode,
+              isWifiRequired: false,
+            )
+            .timeout(const Duration(seconds: 90), onTimeout: () => false);
+        if (!enRes) success = false;
+      }
+
+      if (!arDownloaded) {
+        final arRes = await manager
+            .downloadModel(
+              TranslateLanguage.arabic.bcpCode,
+              isWifiRequired: false,
+            )
+            .timeout(const Duration(seconds: 90), onTimeout: () => false);
+        if (!arRes) success = false;
+      }
+
+      if (success) {
+        onProgress?.call('Offline Arabic translation ready');
+      } else {
+        onProgress?.call('Translation model unavailable');
+      }
+
+      return success;
+    } on Object catch (e, st) {
+      debugPrint('ML Kit Model preparation error: $e\n$st');
+      onProgress?.call('Translation model unavailable');
+      return false;
+    }
+  }
+
   Future<TranslationResult> translate(
     String text, {
     void Function(String message)? onProgress,
@@ -57,9 +152,7 @@ class ArabicNameTranslationService {
 
     // 2. Prepare models if missing
     try {
-      final prepSuccess = await (_preparationFuture ??= _prepareModels(
-        onProgress,
-      ));
+      final prepSuccess = await prepareModels(onProgress: onProgress);
       if (!prepSuccess) {
         _preparationFuture = null;
         return const TranslationResult.error(
@@ -83,7 +176,7 @@ class ArabicNameTranslationService {
 
       final translated = await _translator!
           .translateText(trimmed)
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 90));
 
       final resultText = translated.trim();
       if (resultText.isEmpty) {
@@ -98,58 +191,6 @@ class ArabicNameTranslationService {
       return const TranslationResult.error(
         'Translation unavailable. Enter Arabic manually or retry.',
       );
-    }
-  }
-
-  Future<bool> _prepareModels(void Function(String message)? onProgress) async {
-    final manager = OnDeviceTranslatorModelManager();
-
-    final enDownloaded = await manager
-        .isModelDownloaded(TranslateLanguage.english.bcpCode)
-        .timeout(const Duration(seconds: 10), onTimeout: () => false);
-
-    final arDownloaded = await manager
-        .isModelDownloaded(TranslateLanguage.arabic.bcpCode)
-        .timeout(const Duration(seconds: 10), onTimeout: () => false);
-
-    if (enDownloaded && arDownloaded) {
-      return true;
-    }
-
-    onProgress?.call('Preparing Arabic translation…');
-
-    final progressTimer = Timer(const Duration(seconds: 10), () {
-      onProgress?.call(
-        'Downloading translation language models. This may take a moment.',
-      );
-    });
-
-    try {
-      var success = true;
-
-      if (!enDownloaded) {
-        final enRes = await manager
-            .downloadModel(
-              TranslateLanguage.english.bcpCode,
-              isWifiRequired: false,
-            )
-            .timeout(const Duration(seconds: 60), onTimeout: () => false);
-        if (!enRes) success = false;
-      }
-
-      if (!arDownloaded) {
-        final arRes = await manager
-            .downloadModel(
-              TranslateLanguage.arabic.bcpCode,
-              isWifiRequired: false,
-            )
-            .timeout(const Duration(seconds: 60), onTimeout: () => false);
-        if (!arRes) success = false;
-      }
-
-      return success;
-    } finally {
-      progressTimer.cancel();
     }
   }
 

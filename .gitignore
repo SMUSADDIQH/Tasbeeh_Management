@@ -46,3 +46,18 @@ app.*.map.json
 
 # Local recordings
 *.webm
+android/key.properties
+*.jks
+*.keystore
+
+# Local security reports
+security-reports/
+
+# Temporary plugin-upgrade backups
+pubspec.yaml.before_plugin_upgrade
+pubspec.lock.before_plugin_upgrade
+
+# Android release signing secrets
+android/key.properties
+*.jks
+*.keystore

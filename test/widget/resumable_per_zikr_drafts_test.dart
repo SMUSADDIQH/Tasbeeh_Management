@@ -324,6 +324,10 @@ void main() {
       await tester.pumpWidget(buildApp(const TasbeehCounterWidget()));
       await tester.pumpAndSettle();
 
+      // Switch to Live Zikr tab
+      await tester.tap(find.text('Live Zikr'));
+      await tester.pumpAndSettle();
+
       // Start Live Session
       await tester.tap(find.text('Start Live Session'));
       await tester.pumpAndSettle();
